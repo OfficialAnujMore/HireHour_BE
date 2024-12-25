@@ -1,25 +1,25 @@
-generator client {
-  provider = "prisma-client-js"
-}
-
 datasource db {
   provider = "postgresql"
-  url      = env("postgresql://postgres:root@localhost:5432/postgres?schema=public")
+  url      = env("DATABASE_URL")
+}
+generator client {
+  provider = "prisma-client-js"
+  // output   = "./node_modules/@prisma/client"
 }
 
 model User {
   id              String     @id @default(uuid())
   name            String
   email           String     @unique
-  countryCode     String     @default("+1")
-  phoneNumber     String
-  password        String
+  countryCode     String?     @default("+1")
+  phoneNumber     String?
+  password        String?
   userRole        Role       @default(CUSTOMER)
   profileImageURL String?
   bannerImageURL  String?
-  lastLogin       DateTime
-  isDeleted       Boolean    @default(false)
-  isDisabled      Boolean    @default(false)
+  lastLogin       DateTime?
+  isDeleted       Boolean?    @default(false)
+  isDisabled      Boolean?    @default(false)
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
   Services        Services[]
@@ -61,3 +61,4 @@ enum Role {
   CUSTOMER
   SERVICE_PROVIDER
 }
+
