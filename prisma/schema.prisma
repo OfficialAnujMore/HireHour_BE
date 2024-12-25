@@ -1,14 +1,63 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("postgresql://postgres:root@localhost:5432/postgres?schema=public")
+}
+
+model User {
+  id              String     @id @default(uuid())
+  name            String
+  email           String     @unique
+  countryCode     String     @default("+1")
+  phoneNumber     String
+  password        String
+  userRole        Role       @default(CUSTOMER)
+  profileImageURL String?
+  bannerImageURL  String?
+  lastLogin       DateTime
+  isDeleted       Boolean    @default(false)
+  isDisabled      Boolean    @default(false)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  Services        Services[]
+}
+
+model Services {
+  id             String           @id @default(uuid())
+  title          String
+  description    String
+  servicePreview ServicePreview[]
+  schedule       Schedule[]
+  chargesPerHour String
+  user           User             @relation(fields: [userId], references: [id])
+  userId         String
+  isDeleted      Boolean          @default(false)
+  isDisabled     Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model ServicePreview {
+  id         String    @id @default(uuid())
+  imageURL   String
+  services   Services? @relation(fields: [servicesId], references: [id])
+  servicesId String?
+}
+
+model Schedule {
+  id         String    @id @default(uuid())
+  date       DateTime
+  startTime  DateTime
+  endTime    DateTime
+  Services   Services? @relation(fields: [servicesId], references: [id])
+  servicesId String?
+}
+
+// User Role Enum
+enum Role {
+  CUSTOMER
+  SERVICE_PROVIDER
 }
