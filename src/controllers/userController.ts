@@ -8,6 +8,8 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { ApiReponse } from '../utils/ApiResponse';
 import { Role } from '@prisma/client';
 import helperService from '../services/helperService';
+import prisma from '../prisma/client';
+import service from '../services/service';
 
 // REGISTER NEW USER 
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
@@ -97,7 +99,6 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
     return res.status(400).json(new ApiError(400, 'Error'))
   }
   const response = await helperService.verifyUser(id);
-  console.log("adasffafaffd", response);
   if (!response) {
     return res.status(500).json(new ApiError(500, 'Failed to update user role'))
   }
@@ -109,6 +110,11 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
   return res.status(201).json(new ApiReponse(200, roleUpdateStatus, 'User role updated successfull'));
 })
 
+// Get all active service providers
+export const filterServiceProvider = asyncHandler(async (req:Request, res:Response)=>{
+
+  const result = await service.getServiceProvidersWithServices();
+})
 // TODO: UPDATE USER DETAILS API - TRY TO COMBINE IT WITH UPDATE USER ROLE
 
 export const deleteAllUsers = asyncHandler(async (req: Request, res: Response) => {

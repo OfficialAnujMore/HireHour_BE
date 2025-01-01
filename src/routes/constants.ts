@@ -11,3 +11,4 @@ export const DELETE_ALL_USERS = '/deleteAllUsers'
 // SERVICE ROUTES
 export const ADD_SERVICE = '/addService'
 export const GET_USER_SERVICES = '/getUserServices'
+export const DELETE_SERVICE = '/deleteService'

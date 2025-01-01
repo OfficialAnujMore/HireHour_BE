@@ -26,11 +26,12 @@ const verifyUser = async (id: string) => {
         where: {
             AND: [
                 { id: id },
-                { isDisabled: false }
+                { isDisabled: false },
+                { isDeleted: false }
             ]
         },
         select: USER_PREVIEW_BODY
     })
 }
 
-export default {  validateDuplicateUser, verifyUserEmail, verifyUser}
+export default { validateDuplicateUser, verifyUserEmail, verifyUser }
