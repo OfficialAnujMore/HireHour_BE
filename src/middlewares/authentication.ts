@@ -14,7 +14,6 @@ export const authentication = async (req: Request, res: Response, next: NextFunc
     jwt.verify(token, process.env.ACCESS_TOKEN_SECRET as string, (err, decoded) => {
         if (err) {
             console.log(err);
-
             return res.status(401).json(new ApiError(401, 'Failed to authenticate user'))
         }
         (req as any).user = decoded;

@@ -6,16 +6,10 @@ import { generateTokens } from '../utils/commonFunction';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiReponse } from '../utils/ApiResponse';
+import { Role } from '@prisma/client';
+import helperService from '../services/helperService';
 
-export const getUsers = async (req: Request, res: Response) => {
-  try {
-    const users = await userService.getAllUsers();
-    res.json(users);
-  } catch (error) {
-    return res.status(500).json(new ApiError(500, 'Failed to fetch user details'))
-  }
-};
-
+// REGISTER NEW USER 
 export const registerUser = asyncHandler(async (req: Request, res: Response) => {
   const userData = req.body
 
@@ -31,7 +25,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
     return res.status(400).json(new ApiError(400, 'Invalid password'))
   }
 
-  const userExits = await userService.validateDuplicateUser(userData.email
+  const userExits = await helperService.validateDuplicateUser(userData.email
     , userData.username)
 
 
@@ -49,6 +43,7 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
 
 })
 
+// LOGIN USER
 export const loginUser = asyncHandler(async (req: Request, res: Response) => {
 
   const { email, password } = req.body;
@@ -59,7 +54,7 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
     return res.status(400).json(new ApiError(400, 'Invalid email or password'))
   }
 
-  const userExist = await userService.verifyUserEmail(email);
+  const userExist = await helperService.verifyUserEmail(email);
 
   if (!userExist) {
     return res.status(404).json(new ApiError(404, `User with this email doesn't exists`))
@@ -76,16 +71,32 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   return res.status(201).json(new ApiReponse(200, userResponse, 'Login successful'));
 })
 
+// GET ALL USERS
+export const getUsers = async (req: Request, res: Response) => {
+  try {
+    const users = await userService.getAllUsers();
+    res.json(users);
+  } catch (error) {
+    return res.status(500).json(new ApiError(500, 'Failed to fetch user details'))
+  }
+};
+
+// UPDATE USER ROLE
 export const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
 
 
   const { id, userRole } = req.body
+  console.log(userRole, Role.SERVICE_PROVIDER );
+  
+  if (userRole !== Role.CUSTOMER && userRole !== Role.SERVICE_PROVIDER) {
+    return res.status(400).json(new ApiError(500, 'Invalid user role'))
+  }
   if ([id, userRole].some((field) => {
     field?.trim() == ""
   })) {
-    return res.status(400).json(new ApiError(400, 'Erro'))
+    return res.status(400).json(new ApiError(400, 'Error'))
   }
-  const response = await userService.verifyUser(id);
+  const response = await helperService.verifyUser(id);
   console.log("adasffafaffd", response);
   if (!response) {
     return res.status(500).json(new ApiError(500, 'Failed to update user role'))
@@ -97,23 +108,11 @@ export const updateUserRole = asyncHandler(async (req: Request, res: Response) =
   }
   return res.status(201).json(new ApiReponse(200, roleUpdateStatus, 'User role updated successfull'));
 })
-export const addService = asyncHandler(async (req: Request, res: Response) => {
 
-  const { id, userRole, serviceData } = req.body;
-
-  const isValidUser = await userService.validateUserRole(id, userRole)
-
-  if (!isValidUser) {
-    return res.status(500).json(new ApiError(500, 'User not authorized to create services'))
-  }
-
-  const response = await userService.createUserService(serviceData);
-  return res.status(201).json(new ApiReponse(200, response, 'All users deleted'));
-
-})
+// TODO: UPDATE USER DETAILS API - TRY TO COMBINE IT WITH UPDATE USER ROLE
 
 export const deleteAllUsers = asyncHandler(async (req: Request, res: Response) => {
-  console.warn('Delete all users triggered');
+  console.warn('<<<<<<<<<<<<<<<<<<<<<<<<<<Delete all users triggered>>>>>>>>>>>>>>>>>>>>>>>>>>');
   const response = await userService.deleteAllUser()
 
   return res.status(201).json(new ApiReponse(200, response, 'All users deleted'));
