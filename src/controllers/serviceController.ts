@@ -35,6 +35,12 @@ export const getUserServices = asyncHandler(async (req: Request, res: Response) 
 
 })
 
+export const getServiceProviders = asyncHandler(async (req: Request, res: Response) => {
+  const categories = req.query.category ? JSON.parse(req.query.category as string) : [];
+  const response = await service.getServiceProviders(categories);
+  return res.status(201).json(new ApiReponse(200, response, 'User response'));
+})
+
 export const deleteService = asyncHandler(async (req: Request, res: Response) => {
   const response = await service.deleteService(req.body.servicesId);
 

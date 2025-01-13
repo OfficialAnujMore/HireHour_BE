@@ -16,12 +16,12 @@ model User {
   countryCode     String     @default("+1")
   phoneNumber     String
   password        String
-  userRole        String       @default("CUSTOMER")
+  userRole        String     @default("CUSTOMER")
   profileImageURL String?
   bannerImageURL  String?
   lastLogin       DateTime   @default(now())
-  isDeleted       Boolean   @default(false)
-  isDisabled      Boolean   @default(false)
+  isDeleted       Boolean    @default(false)
+  isDisabled      Boolean    @default(false)
   token           String?
   refreshToken    String?
   createdAt       DateTime   @default(now())
@@ -38,6 +38,7 @@ model Services {
   servicePreview ServicePreview[]
   schedule       Schedule[]
   chargesPerHour String
+  category       String
   user           User             @relation(fields: [userId], references: [id])
   userId         String
   isDeleted      Boolean          @default(false)
@@ -54,15 +55,24 @@ model ServicePreview {
 }
 
 model Schedule {
-  id         String    @id @default(uuid())
-  date       DateTime
-  startTime  DateTime
-  endTime    DateTime
-  Services   Services? @relation(fields: [servicesId], references: [id])
+  id         String     @id @default(uuid())
+  day        String     @default("Unknown") // Provide a default value
+  month      String     @default("Unknown") // Provide a default value
+  fullDate   DateTime   @default(now()) // Provide a default value
+  date       String
+  timeSlots  TimeSlot[]
+  Services   Services?  @relation(fields: [servicesId], references: [id])
   servicesId String?
 }
 
-// User Role Enum
+model TimeSlot {
+  id         String   @id @default(uuid())
+  time       String // Time of the slot (e.g., "9:30 AM")
+  available  Boolean // Availability status
+  schedule   Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId String
+}
+
 enum Role {
   CUSTOMER
   SERVICE_PROVIDER
