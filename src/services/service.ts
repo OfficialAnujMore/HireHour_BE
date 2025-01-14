@@ -1,4 +1,4 @@
-import { Role, Schedule, ServicePreview, Services } from "@prisma/client";
+import { Role, ServicePreview, Services } from "@prisma/client";
 import prisma from "../prisma/client";
 const createUserService = async (
     userService: Services,
@@ -169,8 +169,8 @@ const getServiceProviders = async (categories: string[]) => {
             id: sched.id,
             day: sched.day,
             month: sched.month,
-            date: sched.date, // Convert to ISO string if needed
-            fullDate: new Date(sched.fullDate).toISOString(), // Convert fullDate to ISO string
+            date: sched.date,
+            fullDate: sched.date,
             servicesId: sched.servicesId,
             timeSlots: sched.timeSlots.map(slot => ({
                 id: slot.id,
@@ -182,6 +182,5 @@ const getServiceProviders = async (categories: string[]) => {
 
     return result;
 };
-
 
 export default { createUserService, getServiceProvidersWithServices, deleteService, getServiceProviders };
