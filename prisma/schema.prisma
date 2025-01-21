@@ -9,24 +9,24 @@ generator client {
 }
 
 model User {
-  id              String     @id @default(uuid())
-  name            String
-  email           String     @unique
-  username        String     @unique
-  countryCode     String     @default("+1")
-  phoneNumber     String
-  password        String
-  userRole        String     @default("CUSTOMER")
-  profileImageURL String?
-  bannerImageURL  String?
-  lastLogin       DateTime   @default(now())
-  isDeleted       Boolean    @default(false)
-  isDisabled      Boolean    @default(false)
-  token           String?
-  refreshToken    String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  Services        Services[]
+  id             String     @id @default(uuid())
+  firstName      String
+  lastName       String
+  email          String     @unique
+  username       String     @unique
+  phoneNumber    String
+  password       String
+  userRole       String     @default("CUSTOMER")
+  avatarUri      String?
+  token          String?
+  refreshToken   String?
+  lastLogin      DateTime   @default(now())
+  isDeleted      Boolean    @default(false)
+  isDisabled     Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  Services       Services[]
+  userPreference String[]
 
   @@index(fields: [id, email, username])
 }
@@ -49,16 +49,16 @@ model Services {
 
 model ServicePreview {
   id         String    @id @default(uuid())
-  imageURL   String
+  imageUri   String
   services   Services? @relation(fields: [servicesId], references: [id])
   servicesId String?
 }
 
 model Schedule {
   id         String     @id @default(uuid())
-  day        String     @default("Unknown") // Provide a default value
-  month      String     @default("Unknown") // Provide a default value
-  fullDate   DateTime   @default(now()) // Provide a default value
+  day        String
+  month      String
+  fullDate   DateTime
   date       String
   timeSlots  TimeSlot[]
   Services   Services?  @relation(fields: [servicesId], references: [id])
@@ -67,8 +67,8 @@ model Schedule {
 
 model TimeSlot {
   id         String   @id @default(uuid())
-  time       String // Time of the slot (e.g., "9:30 AM")
-  available  Boolean // Availability status
+  time       String
+  available  Boolean
   schedule   Schedule @relation(fields: [scheduleId], references: [id])
   scheduleId String
 }

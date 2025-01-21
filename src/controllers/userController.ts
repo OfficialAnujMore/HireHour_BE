@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import userService from '../services/userService';
 import { BECRYPT_SALT_VALUE, EMAIL_REGEX, PASSWORD_REGEX, USERNAME_REGEX } from '../utils/constants';
@@ -11,115 +11,139 @@ import helperService from '../services/helperService';
 import prisma from '../prisma/client';
 import service from '../services/service';
 
+// Helper function to handle empty fields
+const isFieldEmpty = (fields: string[]): boolean => {
+  return fields.some(field => field.trim() === "");
+};
+
+// Define types for request bodies
+interface RegisterUserBody {
+  email: string;
+  username: string;
+  password: string;
+  token:string;
+  refreshToken:string;
+}
+
+interface LoginUserBody {
+  email: string;
+  password: string;
+}
+
+interface UpdateUserRoleBody {
+  id: string;
+  userRole: Role;
+}
+
 // REGISTER NEW USER 
-export const registerUser = asyncHandler(async (req: Request, res: Response) => {
-  const userData = req.body
+export const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>, res: Response) => {
+  const userData = req.body;
 
   if (!EMAIL_REGEX.test(userData.email)) {
-    return res.status(400).json(new ApiError(400, 'Invalid email address'))
+    return res.status(400).json(new ApiError(400, 'Invalid email address'));
   }
 
   if (!USERNAME_REGEX.test(userData.username)) {
-    return res.status(400).json(new ApiError(400, 'Invalid email address'))
+    return res.status(400).json(new ApiError(400, 'Invalid username'));
   }
 
   if (!PASSWORD_REGEX.test(userData.password)) {
-    return res.status(400).json(new ApiError(400, 'Invalid password'))
+    return res.status(400).json(new ApiError(400, 'Invalid password'));
   }
 
-  const userExits = await helperService.validateDuplicateUser(userData.email
-    , userData.username)
-
-
-  if (userExits) {
+  const userExists = await helperService.validateDuplicateUser(userData.email, userData.username);
+  if (userExists) {
     return res.status(400).json(new ApiError(400, 'User with the same email or username already exists'));
   }
-  const { accessToken, refreshToken } = await generateTokens({ email: userData.email })
-  userData.token = accessToken
-  userData.refreshToken = refreshToken
+
+  const { accessToken, refreshToken } = await generateTokens({ email: userData.email });
+  userData.token = accessToken;
+  userData.refreshToken = refreshToken;
   userData.password = await bcrypt.hash(userData.password, BECRYPT_SALT_VALUE);
 
-  const user = await userService.registerUser(userData);
-
-  return res.status(201).json(new ApiReponse(200, user, 'User successfull created'));
-
-})
+  try {
+    const user = await userService.registerUser(userData);
+    return res.status(201).json(new ApiReponse(200, user, 'User successfully created'));
+  } catch (err: any) {
+    return res.status(500).json(new ApiError(500, 'Failed to register user', err));
+  }
+});
 
 // LOGIN USER
-export const loginUser = asyncHandler(async (req: Request, res: Response) => {
-
+export const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserBody>, res: Response) => {
   const { email, password } = req.body;
 
-  if ([email, password].some((field) => {
-    field?.trim() == ""
-  })) {
-    return res.status(400).json(new ApiError(400, 'Invalid email or password'))
+  if (isFieldEmpty([email, password])) {
+    return res.status(400).json(new ApiError(400, 'Invalid email or password'));
   }
 
   const userExist = await helperService.verifyUserEmail(email);
-
   if (!userExist) {
-    return res.status(404).json(new ApiError(404, `User with this email doesn't exists`))
+    return res.status(404).json(new ApiError(404, `User with this email doesn't exist`));
   }
+
   const isPasswordValid = await bcrypt.compare(password, userExist.password);
-
   if (!isPasswordValid) {
-    return res.status(401).json(new ApiError(404, `Incorrect password`));
+    return res.status(401).json(new ApiError(401, `Incorrect password`));
   }
 
-  const { accessToken, refreshToken } = await generateTokens({ email: email })
+  const { accessToken, refreshToken } = await generateTokens({ email });
   const userResponse = await userService.loginUser(email, accessToken, refreshToken);
 
-  return res.status(201).json(new ApiReponse(200, userResponse, 'Login successful'));
-})
+  return res.status(200).json(new ApiReponse(200, userResponse, 'Login successful'));
+});
 
 // GET ALL USERS
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const users = await userService.getAllUsers();
-    res.json(users);
+    res.status(200).json(users);
   } catch (error) {
-    return res.status(500).json(new ApiError(500, 'Failed to fetch user details'))
+    return res.status(500).json(new ApiError(500, 'Failed to fetch user details'));
   }
 };
 
 // UPDATE USER ROLE
-export const updateUserRole = asyncHandler(async (req: Request, res: Response) => {
+export const updateUserRole = asyncHandler(async (req: Request<{}, {}, UpdateUserRoleBody>, res: Response) => {
+  const { id, userRole } = req.body;
 
+  if (!id || !userRole || (userRole !== Role.CUSTOMER && userRole !== Role.SERVICE_PROVIDER)) {
+    return res.status(400).json(new ApiError(400, 'Invalid input or role'));
+  }
 
-  const { id, userRole } = req.body
-  console.log(userRole, Role.SERVICE_PROVIDER );
-  
-  if (userRole !== Role.CUSTOMER && userRole !== Role.SERVICE_PROVIDER) {
-    return res.status(400).json(new ApiError(500, 'Invalid user role'))
-  }
-  if ([id, userRole].some((field) => {
-    field?.trim() == ""
-  })) {
-    return res.status(400).json(new ApiError(400, 'Error'))
-  }
-  const response = await helperService.verifyUser(id);
-  if (!response) {
-    return res.status(500).json(new ApiError(500, 'Failed to update user role'))
-  }
-  const roleUpdateStatus = await userService.updateUserRole(id, userRole)
-  if (!roleUpdateStatus) {
-    return res.status(500).json(new ApiError(500, 'Failed to update user role'))
+  try {
+    const userExist = await helperService.verifyUser(id);
+    if (!userExist) {
+      return res.status(404).json(new ApiError(404, 'User not found'));
+    }
 
+    const roleUpdateStatus = await userService.updateUserRole(id, userRole);
+    if (!roleUpdateStatus) {
+      return res.status(500).json(new ApiError(500, 'Failed to update user role'));
+    }
+
+    return res.status(200).json(new ApiReponse(200, roleUpdateStatus, 'User role updated successfully'));
+  } catch (err: any) {
+    return res.status(500).json(new ApiError(500, 'Error while updating role', err));
   }
-  return res.status(201).json(new ApiReponse(200, roleUpdateStatus, 'User role updated successfull'));
-})
+});
 
 // Get all active service providers
-export const filterServiceProvider = asyncHandler(async (req:Request, res:Response)=>{
+export const filterServiceProvider = asyncHandler(async (req: Request, res: Response) => {
+  try {
+    const result = await service.getServiceProvidersWithServices();
+    return res.status(200).json(result);
+  } catch (err: any) {
+    return res.status(500).json(new ApiError(500, 'Failed to fetch service providers', err));
+  }
+});
 
-  const result = await service.getServiceProvidersWithServices();
-})
-// TODO: UPDATE USER DETAILS API - TRY TO COMBINE IT WITH UPDATE USER ROLE
-
+// DELETE ALL USERS
 export const deleteAllUsers = asyncHandler(async (req: Request, res: Response) => {
-  console.warn('<<<<<<<<<<<<<<<<<<<<<<<<<<Delete all users triggered>>>>>>>>>>>>>>>>>>>>>>>>>>');
-  const response = await userService.deleteAllUser()
-
-  return res.status(201).json(new ApiReponse(200, response, 'All users deleted'));
-})
+  try {
+    const response = await userService.deleteAllUser();
+    return res.status(200).json(new ApiReponse(200, response, 'All users deleted'));
+  } catch (err: any) {
+    return res.status(500).json(new ApiError(500, 'Failed to delete all users', err));
+  }
+});
