@@ -39,6 +39,7 @@ model Services {
   schedule       Schedule[]
   chargesPerHour String
   category       String
+  ratings        String           @default("5.0")
   user           User             @relation(fields: [userId], references: [id])
   userId         String
   isDeleted      Boolean          @default(false)

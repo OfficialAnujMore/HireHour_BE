@@ -5,14 +5,12 @@ export const BECRYPT_SALT_VALUE = 8
 
 export const USER_PREVIEW_BODY = {
     id: true,
-    name: true,
+    firstName: true,
+    lastName: true,
     email: true,
     username: true,
-    countryCode: true,
     phoneNumber: true,
     userRole: true,
-    profileImageURL: true,
-    bannerImageURL: true,
     token: true,
     refreshToken: true,
     lastLogin: true,

@@ -18,11 +18,14 @@ const isFieldEmpty = (fields: string[]): boolean => {
 
 // Define types for request bodies
 interface RegisterUserBody {
+  firstName: string;
+  lastName: string;
   email: string;
   username: string;
+  phoneNumber: string;
   password: string;
-  token:string;
-  refreshToken:string;
+  token: string;
+  refreshToken: string;
 }
 
 interface LoginUserBody {
@@ -32,13 +35,12 @@ interface LoginUserBody {
 
 interface UpdateUserRoleBody {
   id: string;
-  userRole: Role;
+  isEnrolled: boolean;
 }
 
 // REGISTER NEW USER 
 export const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>, res: Response) => {
   const userData = req.body;
-
   if (!EMAIL_REGEX.test(userData.email)) {
     return res.status(400).json(new ApiError(400, 'Invalid email address'));
   }
@@ -105,9 +107,9 @@ export const getUsers = async (req: Request, res: Response) => {
 
 // UPDATE USER ROLE
 export const updateUserRole = asyncHandler(async (req: Request<{}, {}, UpdateUserRoleBody>, res: Response) => {
-  const { id, userRole } = req.body;
+  const { id, isEnrolled } = req.body;
 
-  if (!id || !userRole || (userRole !== Role.CUSTOMER && userRole !== Role.SERVICE_PROVIDER)) {
+  if (!id) {
     return res.status(400).json(new ApiError(400, 'Invalid input or role'));
   }
 
@@ -117,7 +119,7 @@ export const updateUserRole = asyncHandler(async (req: Request<{}, {}, UpdateUse
       return res.status(404).json(new ApiError(404, 'User not found'));
     }
 
-    const roleUpdateStatus = await userService.updateUserRole(id, userRole);
+    const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled ? Role.SERVICE_PROVIDER : Role.CUSTOMER);
     if (!roleUpdateStatus) {
       return res.status(500).json(new ApiError(500, 'Failed to update user role'));
     }

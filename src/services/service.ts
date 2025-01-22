@@ -50,7 +50,7 @@ const createUserService = async (
 };
 
 const getServiceProvidersWithServices = async (id?: string) => {
-    return await prisma.user.findMany({
+    const services = await prisma.user.findMany({
         where: {
             AND: [
                 { userRole: Role.SERVICE_PROVIDER },
@@ -59,7 +59,7 @@ const getServiceProvidersWithServices = async (id?: string) => {
                 ...(id ? [{ id }] : []),
             ],
         },
-        include: {
+        select: {
             Services: {
                 where: {
                     AND: [{ isDeleted: false }, { isDisabled: false }],
@@ -75,6 +75,7 @@ const getServiceProvidersWithServices = async (id?: string) => {
             },
         },
     });
+    return services.flatMap(user => user.Services);
 };
 
 const deleteService = async (servicesId: string) => {
@@ -149,6 +150,7 @@ const getServiceProviders = async (categories: string[]) => {
         title: service.title,
         description: service.description,
         chargesPerHour: service.chargesPerHour,
+        ratings:service.ratings,
         category: service.category,
         isDeleted: service.isDeleted,
         isDisabled: service.isDisabled,
