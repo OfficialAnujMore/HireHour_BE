@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { deleteAllUsers, getUsers, loginUser, registerUser, updateUserRole } from '../controllers/userController';
-import { addService, deleteService, getServiceProviders, getUserServices } from '../controllers/serviceController'
-import { ADD_SERVICE, CREATE_USER, DELETE_ALL_USERS, DELETE_SERVICE, GET_ALL_USERS, GET_SERVICE_PROVIDERS, GET_USER_SERVICES, LOGIN_USER, UPDATE_USER_ROLE } from './constants';
+import { addService, bookService, deleteService, getServiceProviders, getUpcomingEvents, getUserServices } from '../controllers/serviceController'
+import { ADD_SERVICE, BOOK_SERVICE, CREATE_USER, DELETE_ALL_USERS, DELETE_SERVICE, GET_ALL_USERS, GET_SERVICE_PROVIDERS, GET_USER_SERVICES, LOGIN_USER, UPCOMING_EVENTS, UPDATE_USER_ROLE } from './constants';
 import { authentication } from '../middlewares/authentication';
 
 const router = Router();
@@ -19,4 +19,7 @@ router.post(ADD_SERVICE, authentication, addService);
 router.post(GET_USER_SERVICES, authentication, getUserServices);
 router.get(GET_SERVICE_PROVIDERS,authentication,getServiceProviders)
 router.post(DELETE_SERVICE, authentication,deleteService)
+router.post(BOOK_SERVICE, authentication,bookService)
+router.post(UPCOMING_EVENTS, authentication,getUpcomingEvents)
+
 export default router;

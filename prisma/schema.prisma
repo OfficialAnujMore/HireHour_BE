@@ -27,6 +27,7 @@ model User {
   updatedAt      DateTime   @updatedAt
   Services       Services[]
   userPreference String[]
+  TimeSlot       TimeSlot[]
 
   @@index(fields: [id, email, username])
 }
@@ -67,11 +68,13 @@ model Schedule {
 }
 
 model TimeSlot {
-  id         String   @id @default(uuid())
-  time       String
-  available  Boolean
-  schedule   Schedule @relation(fields: [scheduleId], references: [id])
-  scheduleId String
+  id           String   @id @default(uuid())
+  time         String
+  available    Boolean
+  bookedUser   User?    @relation(fields: [bookedUserId], references: [id])
+  bookedUserId String? // Nullable to allow unbooked slots
+  schedule     Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId   String
 }
 
 enum Role {

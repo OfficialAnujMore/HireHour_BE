@@ -150,7 +150,7 @@ const getServiceProviders = async (categories: string[]) => {
         title: service.title,
         description: service.description,
         chargesPerHour: service.chargesPerHour,
-        ratings:service.ratings,
+        ratings: service.ratings,
         category: service.category,
         isDeleted: service.isDeleted,
         isDisabled: service.isDisabled,
@@ -177,4 +177,55 @@ const getServiceProviders = async (categories: string[]) => {
     }));
 };
 
-export default { createUserService, getServiceProvidersWithServices, deleteService, getServiceProviders };
+const bookService = async (
+    userId: string,
+    timeSlotId: string
+) => {
+    console.log(userId, timeSlotId);
+
+    return await prisma.timeSlot.update({
+        where: { id: timeSlotId },
+        data: {
+            bookedUserId: userId,
+            available: false,
+        },
+    });
+};
+
+const getUpcomingEvents = async (
+    userId: string,
+) => {
+    const upcomingEvents = await prisma.timeSlot.findMany({
+        where: { bookedUserId: userId },
+        include: {
+            schedule: {
+                include: {
+                    Services: true,
+                },
+            },
+        },
+    });
+
+    // Format the response data
+    const formattedEvents = upcomingEvents.map((event) => ({
+        id: event.id,
+        time: event.time,
+        available: event.available,
+        bookedUserId: event.bookedUserId,
+        scheduleId: event.scheduleId,
+        day: event.schedule.day,
+        month: event.schedule.month,
+        fullDate: event.schedule.fullDate,
+        date: event.schedule.date,
+        title: event.schedule.Services?.title || null,
+        description: event.schedule.Services?.description || null,
+        isDeleted: event.schedule.Services?.isDeleted || null,
+        isDisabled: event.schedule.Services?.isDisabled || null,
+        createdAt: event.schedule.Services?.createdAt || null,
+        updatedAt: event.schedule.Services?.updatedAt || null,
+    }));
+
+    return formattedEvents
+};
+
+export default { createUserService, getServiceProvidersWithServices, deleteService, getServiceProviders, bookService, getUpcomingEvents };

@@ -64,3 +64,19 @@ export const deleteService = asyncHandler(async (req: Request, res: Response) =>
   const response = await service.deleteService(servicesId);
   return res.status(200).json(new ApiReponse(200, response, 'Service deleted successfully'));
 });
+
+
+
+
+export const bookService = asyncHandler(async (req: Request, res: Response) => {
+  const { userId, timeSlotId } = req.body;
+  const response = await service.bookService(userId, timeSlotId);
+  return res.status(200).json(new ApiReponse(200, response, 'Service deleted successfully'));
+});
+
+export const getUpcomingEvents = asyncHandler(async (req: Request, res: Response) => {
+  const { userId } = req.body;
+  const response = await service.getUpcomingEvents(userId);
+  return res.status(200).json(new ApiReponse(200, response, 'Service deleted successfully'));
+});
+
