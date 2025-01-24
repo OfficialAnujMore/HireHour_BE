@@ -48,7 +48,8 @@ export const getServiceProviders = asyncHandler(async (req: Request, res: Respon
     }
   }
 
-  const response = await service.getServiceProviders(categories);
+  const response = await service.getServiceProviders(req.query.id as string | undefined,categories);
+  
   return res.status(200).json(new ApiReponse(200, response, 'Service providers retrieved successfully'));
 });
 

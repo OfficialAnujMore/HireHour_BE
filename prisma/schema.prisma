@@ -16,7 +16,7 @@ model User {
   username       String     @unique
   phoneNumber    String
   password       String
-  userRole       String     @default("CUSTOMER")
+  isCustomer     Boolean    @default(true)
   avatarUri      String?
   token          String?
   refreshToken   String?
@@ -75,6 +75,15 @@ model TimeSlot {
   bookedUserId String? // Nullable to allow unbooked slots
   schedule     Schedule @relation(fields: [scheduleId], references: [id])
   scheduleId   String
+}
+
+model OTP {
+  id          String   @id @default(uuid())
+  otp         Int
+  key         String
+  field       String
+  type        String
+  expireAfter DateTime
 }
 
 enum Role {

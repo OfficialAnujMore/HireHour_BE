@@ -32,24 +32,24 @@ const getAllUsers = async () => {
   });
 };
 
-const updateUserRole = async (id: string, userRole: Role) => {
+const updateUserRole = async (id: string, isEnrolled: boolean) => {
   return await prisma.user.update({
     where: {
       id: id
     },
     data: {
-      userRole: userRole
+      isCustomer: isEnrolled
     },
     select: USER_PREVIEW_BODY
   })
 }
 
-const validateUserRole = async (id: string, userRole: Role) => {
+const validateUserRole = async (id: string, isCustomer: boolean) => {
   return await prisma.user.findFirst({
     where: {
       AND: [
-        { id: id },
-        { userRole: Role.CUSTOMER }
+        { id },
+        { isCustomer }
       ]
     },
     select: USER_PREVIEW_BODY

@@ -2,72 +2,83 @@ import { NextFunction, Request, Response } from "express";
 import bcrypt from 'bcrypt';
 import userService from '../services/userService';
 import { BECRYPT_SALT_VALUE, EMAIL_REGEX, PASSWORD_REGEX, USERNAME_REGEX } from '../utils/constants';
-import { generateTokens } from '../utils/commonFunction';
+import { generateOTP, generateTokens, otpExpireAfter } from '../utils/helperFunctions';
 import { ApiError } from '../utils/ApiError';
 import { asyncHandler } from '../utils/asyncHandler';
 import { ApiReponse } from '../utils/ApiResponse';
 import { Role } from '@prisma/client';
 import helperService from '../services/helperService';
-import prisma from '../prisma/client';
 import service from '../services/service';
+import { LoginUserBody, RegisterUserBody, UpdateUserRoleBody, ValidateUsernameAndEmailBody } from "../interfaces/userInterface";
+import { ERROR_MESSAGE, SUCCESS_MESSAGE } from "../utils/message";
+
 
 // Helper function to handle empty fields
 const isFieldEmpty = (fields: string[]): boolean => {
   return fields.some(field => field.trim() === "");
 };
 
-// Define types for request bodies
-interface RegisterUserBody {
-  firstName: string;
-  lastName: string;
-  email: string;
-  username: string;
-  phoneNumber: string;
-  password: string;
-  token: string;
-  refreshToken: string;
-}
+export const verifyEmailAndUserName = asyncHandler(async (req: Request<{}, {}, ValidateUsernameAndEmailBody>, res: Response) => {
+  const { username, email, password } = req.body;
 
-interface LoginUserBody {
-  email: string;
-  password: string;
-}
+  // User field validation
+  if (!EMAIL_REGEX.test(email)) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.invalidEmail));
+  }
 
-interface UpdateUserRoleBody {
-  id: string;
-  isEnrolled: boolean;
-}
+  if (!USERNAME_REGEX.test(username)) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.invalidUsername));
+  }
 
-// REGISTER NEW USER 
+  if (!PASSWORD_REGEX.test(password)) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.invalidPassword));
+  }
+
+  // Validate duplicate user email address
+  const duplicateEmail = await helperService.validateUserEmail(email);
+  if (duplicateEmail) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.duplicateEmail));
+  }
+
+  // Validate duplicate username
+  const duplicateUsername = await helperService.validateUsername(username);
+  if (duplicateUsername) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.duplicateUsername));
+  }
+
+  const emailOTP = await generateOTP()
+  const storeOTPResponse = await helperService.storeOTP(emailOTP, email, 'email', 'registration', otpExpireAfter())
+  // TODO: Function call to send OTP to user email via sendgrid
+  return res.status(200).json(new ApiReponse(200, {}, SUCCESS_MESSAGE.emailOTPSuccess));
+});
+
+export const verifyPhoneNumber = asyncHandler(async (req: Request<{}, {}, { phoneNumber: string }>, res: Response) => {
+  const { phoneNumber } = req.body;
+
+  // Validate duplicate phonenumber
+  const duplicatePhoneNumber = await helperService.validatePhoneNumber(phoneNumber);
+  if (duplicatePhoneNumber) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.duplicatePhoneNumber));
+  }
+
+  const phoneNumberOTP = await generateOTP()
+  const storeOTPResponse = await helperService.storeOTP(phoneNumberOTP, phoneNumber, 'phoneNumber', 'registration', otpExpireAfter())
+  // TODO: Function call to send OTP to user message via sendgrid
+  return res.status(200).json(new ApiReponse(200, {}, SUCCESS_MESSAGE.phoneOTPSuccess));
+});
+
 export const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUserBody>, res: Response) => {
-  const userData = req.body;
-  if (!EMAIL_REGEX.test(userData.email)) {
-    return res.status(400).json(new ApiError(400, 'Invalid email address'));
-  }
-
-  if (!USERNAME_REGEX.test(userData.username)) {
-    return res.status(400).json(new ApiError(400, 'Invalid username'));
-  }
-
-  if (!PASSWORD_REGEX.test(userData.password)) {
-    return res.status(400).json(new ApiError(400, 'Invalid password'));
-  }
-
-  const userExists = await helperService.validateDuplicateUser(userData.email, userData.username);
-  if (userExists) {
-    return res.status(400).json(new ApiError(400, 'User with the same email or username already exists'));
-  }
-
-  const { accessToken, refreshToken } = await generateTokens({ email: userData.email });
-  userData.token = accessToken;
-  userData.refreshToken = refreshToken;
-  userData.password = await bcrypt.hash(userData.password, BECRYPT_SALT_VALUE);
+  const data = req.body;
+  const { accessToken, refreshToken } = await generateTokens({ email: data.email });
+  data.token = accessToken;
+  data.refreshToken = refreshToken;
+  data.password = await bcrypt.hash(data.password, BECRYPT_SALT_VALUE);
 
   try {
-    const user = await userService.registerUser(userData);
-    return res.status(201).json(new ApiReponse(200, user, 'User successfully created'));
+    const user = await userService.registerUser(data);
+    return res.status(201).json(new ApiReponse(200, user, SUCCESS_MESSAGE.registerSuccess));
   } catch (err: any) {
-    return res.status(500).json(new ApiError(500, 'Failed to register user', err));
+    return res.status(500).json(new ApiError(500, ERROR_MESSAGE.registrationFailure, err));
   }
 });
 
@@ -75,24 +86,23 @@ export const registerUser = asyncHandler(async (req: Request<{}, {}, RegisterUse
 export const loginUser = asyncHandler(async (req: Request<{}, {}, LoginUserBody>, res: Response) => {
   const { email, password } = req.body;
 
-  if (isFieldEmpty([email, password])) {
-    return res.status(400).json(new ApiError(400, 'Invalid email or password'));
+  if (!EMAIL_REGEX.test(email)) {
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.invalidEmail));
   }
-
   const userExist = await helperService.verifyUserEmail(email);
   if (!userExist) {
-    return res.status(404).json(new ApiError(404, `User with this email doesn't exist`));
+    return res.status(404).json(new ApiError(404, ERROR_MESSAGE.userEmailFound));
   }
 
   const isPasswordValid = await bcrypt.compare(password, userExist.password);
-  if (!isPasswordValid) {
-    return res.status(401).json(new ApiError(401, `Incorrect password`));
+  if (!isPasswordValid || !PASSWORD_REGEX.test(password)) {
+    return res.status(401).json(new ApiError(401, ERROR_MESSAGE.invalidPassword));
   }
 
   const { accessToken, refreshToken } = await generateTokens({ email });
   const userResponse = await userService.loginUser(email, accessToken, refreshToken);
 
-  return res.status(200).json(new ApiReponse(200, userResponse, 'Login successful'));
+  return res.status(200).json(new ApiReponse(200, userResponse, SUCCESS_MESSAGE.loginSuccess));
 });
 
 // GET ALL USERS
@@ -110,23 +120,23 @@ export const updateUserRole = asyncHandler(async (req: Request<{}, {}, UpdateUse
   const { id, isEnrolled } = req.body;
 
   if (!id) {
-    return res.status(400).json(new ApiError(400, 'Invalid input or role'));
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.generalError));
   }
 
   try {
     const userExist = await helperService.verifyUser(id);
     if (!userExist) {
-      return res.status(404).json(new ApiError(404, 'User not found'));
+      return res.status(404).json(new ApiError(404, ERROR_MESSAGE.userNotFound));
     }
 
-    const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled ? Role.SERVICE_PROVIDER : Role.CUSTOMER);
+    const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled);
     if (!roleUpdateStatus) {
-      return res.status(500).json(new ApiError(500, 'Failed to update user role'));
+      return res.status(500).json(new ApiError(500, ERROR_MESSAGE.enrollmentFailure));
     }
 
-    return res.status(200).json(new ApiReponse(200, roleUpdateStatus, 'User role updated successfully'));
+    return res.status(200).json(new ApiReponse(200, roleUpdateStatus, SUCCESS_MESSAGE.enrollmentSuccess));
   } catch (err: any) {
-    return res.status(500).json(new ApiError(500, 'Error while updating role', err));
+    return res.status(500).json(new ApiError(500, ERROR_MESSAGE.generalError, err));
   }
 });
 

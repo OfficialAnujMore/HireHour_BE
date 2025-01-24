@@ -106,7 +106,9 @@ const deleteService = async (servicesId: string) => {
     ]);
 };
 
-const getServiceProviders = async (categories: string[]) => {
+const getServiceProviders = async (userId:string|undefined,categories: string[]) => {
+    console.log({userId});
+    
     const services = await prisma.services.findMany({
         where: {
             isDeleted: false,
@@ -114,6 +116,9 @@ const getServiceProviders = async (categories: string[]) => {
             category: {
                 in: categories,
             },
+            userId: {
+                not:userId
+            }
         },
         include: {
             user: {
