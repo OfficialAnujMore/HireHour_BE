@@ -5,6 +5,9 @@ export const SUCCESS_MESSAGE = {
   loginSuccess: 'Login successfull',
   enrollmentSuccess: 'Successfully enrolled as a Service provider',
   serviceCreated: 'Service creation successfull',
+  // General Success
+  success: 'Successfully fetched response',
+  deletedSuccessFully: 'Deleted Successfully',
 }
 
 export const ERROR_MESSAGE = {
@@ -21,6 +24,7 @@ export const ERROR_MESSAGE = {
   enrollmentFailure: 'Fail to enroll as a service provider',
   notAuthorized:
     'User must be enrolled as a service provider to create an service',
+  serviceNotFound: 'Service not found',
 
   // Common Errors
   generalError: 'An error has occured',

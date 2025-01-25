@@ -1,7 +1,7 @@
 import { Role, ServicePreview, Services } from '@prisma/client'
 import prisma from '../prisma/client'
 
-const createUserService = async (
+const createService = async (
   userService: Services,
   servicePreviews?: ServicePreview[],
   schedules?: {
@@ -49,12 +49,133 @@ const createUserService = async (
   })
 }
 
-const getServiceProvidersWithServices = async (id?: string) => {
+const getServiceById = async (serviceId: string) => {
+  return await prisma.services.findUnique({
+    where: { id: serviceId },
+    include: {
+      servicePreview: true,
+      schedule: {
+        include: {
+          timeSlots: true,
+        },
+      },
+    },
+  })
+}
+
+const updateService = async (
+  serviceId: string,
+  updateData: Partial<Services>,
+  servicePreviews?: ServicePreview[],
+  schedules?: {
+    id: string
+    day: string
+    month: string
+    date: string
+    fullDate: Date
+    timeSlots: {
+      id: string
+      time: string
+      available: boolean
+    }[]
+  }[],
+) => {
+  return await prisma.services.update({
+    where: { id: serviceId },
+    data: {
+      ...updateData,
+      servicePreview: servicePreviews
+        ? {
+            upsert: servicePreviews.map((preview) => ({
+              where: { id: preview.id || '' },
+              update: { imageUri: preview.imageUri },
+              create: { imageUri: preview.imageUri },
+            })),
+          }
+        : undefined,
+      schedule: schedules
+        ? {
+            upsert: schedules.map((schedule) => ({
+              where: { id: schedule.id || '' },
+              update: {
+                day: schedule.day,
+                month: schedule.month,
+                date: schedule.date,
+                fullDate: schedule.fullDate,
+                timeSlots: {
+                  upsert: schedule.timeSlots.map((timeSlot) => ({
+                    where: { id: timeSlot.id || '' },
+                    update: {
+                      time: timeSlot.time,
+                      available: timeSlot.available,
+                    },
+                    create: {
+                      time: timeSlot.time,
+                      available: timeSlot.available,
+                    },
+                  })),
+                },
+              },
+              create: {
+                day: schedule.day,
+                month: schedule.month,
+                date: schedule.date,
+                fullDate: schedule.fullDate,
+                timeSlots: {
+                  create: schedule.timeSlots.map((timeSlot) => ({
+                    time: timeSlot.time,
+                    available: timeSlot.available,
+                  })),
+                },
+              },
+            })),
+          }
+        : undefined,
+    },
+  })
+}
+
+const deleteService = async (servicesId: string) => {
+  // Delete all dependencies and then the service itself
+  // await prisma.$transaction([
+  //   prisma.timeSlot.deleteMany({
+  //     where: {
+  //       schedule: {
+  //         servicesId,
+  //       },
+  //     },
+  //   }),
+  //   prisma.schedule.deleteMany({
+  //     where: {
+  //       servicesId,
+  //     },
+  //   }),
+  //   prisma.servicePreview.deleteMany({
+  //     where: {
+  //       servicesId,
+  //     },
+  //   }),
+  //   prisma.services.delete({
+  //     where: {
+  //       id: servicesId,
+  //     },
+  //   }),
+  // ])
+
+  return await prisma.services.update({
+    where: { id: servicesId },
+    data: {
+      deletedAt: new Date(),
+    },
+  })
+}
+
+const getMyService = async (id?: string) => {
   const services = await prisma.user.findMany({
     where: {
       AND: [
-        { userRole: Role.SERVICE_PROVIDER },
-        { isDeleted: false },
+        { isCustomer: false },
+        { deletedAt: null },
         { isDisabled: false },
         ...(id ? [{ id }] : []),
       ],
@@ -62,7 +183,7 @@ const getServiceProvidersWithServices = async (id?: string) => {
     select: {
       Services: {
         where: {
-          AND: [{ isDeleted: false }, { isDisabled: false }],
+          AND: [{ deletedAt: null }, { isDisabled: false }],
         },
         include: {
           servicePreview: true,
@@ -78,43 +199,13 @@ const getServiceProvidersWithServices = async (id?: string) => {
   return services.flatMap((user) => user.Services)
 }
 
-const deleteService = async (servicesId: string) => {
-  // Delete all dependencies and then the service itself
-  await prisma.$transaction([
-    prisma.timeSlot.deleteMany({
-      where: {
-        schedule: {
-          servicesId,
-        },
-      },
-    }),
-    prisma.schedule.deleteMany({
-      where: {
-        servicesId,
-      },
-    }),
-    prisma.servicePreview.deleteMany({
-      where: {
-        servicesId,
-      },
-    }),
-    prisma.services.delete({
-      where: {
-        id: servicesId,
-      },
-    }),
-  ])
-}
-
-const getServiceProviders = async (
+const getServicesByCategory = async (
   userId: string | undefined,
   categories: string[],
 ) => {
-  console.log({ userId })
-
   const services = await prisma.services.findMany({
     where: {
-      isDeleted: false,
+      deletedAt: null,
       isDisabled: false,
       category: {
         in: categories,
@@ -132,7 +223,7 @@ const getServiceProviders = async (
           email: true,
           username: true,
           phoneNumber: true,
-          userRole: true,
+          isCustomer: true,
           avatarUri: true,
         },
       },
@@ -152,7 +243,7 @@ const getServiceProviders = async (
     email: service.user.email,
     username: service.user.username,
     phoneNumber: service.user.phoneNumber,
-    userRole: service.user.userRole,
+    isCustomer: service.user.isCustomer,
     avatarUri: service.user.avatarUri || '',
     serviceId: service.id,
     title: service.title,
@@ -160,7 +251,7 @@ const getServiceProviders = async (
     chargesPerHour: service.chargesPerHour,
     ratings: service.ratings,
     category: service.category,
-    isDeleted: service.isDeleted,
+    deletedAt: service.deletedAt,
     isDisabled: service.isDisabled,
     createdAt: service.createdAt,
     updatedAt: service.updatedAt,
@@ -186,7 +277,6 @@ const getServiceProviders = async (
 }
 
 const bookService = async (userId: string, timeSlotId: string) => {
-  console.log(userId, timeSlotId)
 
   return await prisma.timeSlot.update({
     where: { id: timeSlotId },
@@ -222,7 +312,7 @@ const getUpcomingEvents = async (userId: string) => {
     date: event.schedule.date,
     title: event.schedule.Services?.title || null,
     description: event.schedule.Services?.description || null,
-    isDeleted: event.schedule.Services?.isDeleted || null,
+    deletedAt: event.schedule.Services?.deletedAt || null,
     isDisabled: event.schedule.Services?.isDisabled || null,
     createdAt: event.schedule.Services?.createdAt || null,
     updatedAt: event.schedule.Services?.updatedAt || null,
@@ -232,10 +322,12 @@ const getUpcomingEvents = async (userId: string) => {
 }
 
 export default {
-  createUserService,
-  getServiceProvidersWithServices,
+  createService,
+  getServiceById,
+  updateService,
+  getMyService,
   deleteService,
-  getServiceProviders,
+  getServicesByCategory,
   bookService,
   getUpcomingEvents,
 }

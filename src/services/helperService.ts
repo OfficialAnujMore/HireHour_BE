@@ -57,7 +57,7 @@ const storeOTP = async (
 const verifyUser = async (id: string) => {
   return await prisma.user.findFirst({
     where: {
-      AND: [{ id: id }, { isDisabled: false }, { isDeleted: false }],
+      AND: [{ id: id }, { isDisabled: false }, { deletedAt: null }],
     },
     select: USER_PREVIEW_BODY,
   })
