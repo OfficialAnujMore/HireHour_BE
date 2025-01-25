@@ -1,83 +1,131 @@
-import { Request, Response } from "express";
-import service from "../services/service";
-import { ApiError } from "../utils/ApiError";
-import { ApiReponse } from "../utils/ApiResponse";
-import { asyncHandler } from "../utils/asyncHandler";
-import userService from "../services/userService";
-import { Role } from "@prisma/client";
-import helperService from "../services/helperService";
-
+import { Request, Response } from 'express'
+import service from '../services/service'
+import { ApiError } from '../utils/ApiError'
+import { ApiReponse } from '../utils/ApiResponse'
+import { asyncHandler } from '../utils/asyncHandler'
+import userService from '../services/userService'
+import { Role } from '@prisma/client'
+import helperService from '../services/helperService'
+import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 
 // Controller to add a service
 export const addService = asyncHandler(async (req: Request, res: Response) => {
-  const { id, userRole, serviceData } = req.body;
+  const { id, isCustomer, serviceData } = req.body
 
   // Ensure the user is a service provider
-  if (!(userRole === Role.SERVICE_PROVIDER)) {
-    return res.status(403).json(new ApiError(403, 'User not authorized to create services'));
+  if (isCustomer) {
+    return res.status(403).json(new ApiError(403, ERROR_MESSAGE.notAuthorized))
   }
 
   // Verify if the user is valid
-  const isValidUser = await helperService.verifyUser(id);
+  const isValidUser = await helperService.verifyUser(id)
   if (!isValidUser) {
-    return res.status(400).json(new ApiError(400, 'Not a valid user'));
+    return res.status(400).json(new ApiError(400, ERROR_MESSAGE.userNotFound))
   }
 
   // Create the service
-  const response = await service.createUserService(serviceData, serviceData.servicePreview, serviceData.schedule);
-  return res.status(201).json(new ApiReponse(201, response, 'Service created successfully'));
-});
+  const response = await service.createUserService(
+    serviceData,
+    serviceData.servicePreview,
+    serviceData.schedule,
+  )
+  return res
+    .status(201)
+    .json(new ApiReponse(201, response, SUCCESS_MESSAGE.serviceCreated))
+})
 
 // Controller to get all services for a specific user
-export const getUserServices = asyncHandler(async (req: Request, res: Response) => {
-  const response = await service.getServiceProvidersWithServices(req.body.id);
-  return res.status(200).json(new ApiReponse(200, response, 'User services retrieved successfully'));
-});
+export const getUserServices = asyncHandler(
+  async (req: Request, res: Response) => {
+    const response = await service.getServiceProvidersWithServices(req.body.id)
+    return res
+      .status(200)
+      .json(
+        new ApiReponse(200, response, 'User services retrieved successfully'),
+      )
+  },
+)
 
 // Controller to get service providers by category
-export const getServiceProviders = asyncHandler(async (req: Request, res: Response) => {
-  let categories: string[] = [];
-  if (req.query.category) {
-    try {
-      categories = JSON.parse(req.query.category as string);
-      if (!Array.isArray(categories)) {
-        return res.status(400).json(new ApiError(400, 'Invalid category format'));
+export const getServiceProviders = asyncHandler(
+  async (req: Request, res: Response) => {
+    let categories: string[] = []
+    if (req.query.category) {
+      try {
+        categories = JSON.parse(req.query.category as string)
+        if (!Array.isArray(categories)) {
+          return res
+            .status(400)
+            .json(new ApiError(400, 'Invalid category format'))
+        }
+      } catch (error) {
+        return res
+          .status(400)
+          .json(new ApiError(400, 'Invalid JSON format for category'))
       }
-    } catch (error) {
-      return res.status(400).json(new ApiError(400, 'Invalid JSON format for category'));
     }
-  }
 
-  const response = await service.getServiceProviders(req.query.id as string | undefined,categories);
-  
-  return res.status(200).json(new ApiReponse(200, response, 'Service providers retrieved successfully'));
-});
+    const response = await service.getServiceProviders(
+      req.query.id as string | undefined,
+      categories,
+    )
+
+    return res
+      .status(200)
+      .json(
+        new ApiReponse(
+          200,
+          response,
+          'Service providers retrieved successfully',
+        ),
+      )
+  },
+)
 
 // Controller to delete a service by ID
-export const deleteService = asyncHandler(async (req: Request, res: Response) => {
-  const { servicesId } = req.body;
+export const deleteService = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { servicesId } = req.body
 
-  // Validate the servicesId
-  if (!servicesId) {
-    return res.status(400).json(new ApiError(400, 'Service ID is required'));
-  }
+    // Validate the servicesId
+    if (!servicesId) {
+      return res.status(400).json(new ApiError(400, 'Service ID is required'))
+    }
 
-  const response = await service.deleteService(servicesId);
-  return res.status(200).json(new ApiReponse(200, response, 'Service deleted successfully'));
-});
-
-
-
+    const response = await service.deleteService(servicesId)
+    return res
+      .status(200)
+      .json(new ApiReponse(200, response, 'Service deleted successfully'))
+  },
+)
 
 export const bookService = asyncHandler(async (req: Request, res: Response) => {
-  const { userId, timeSlotId } = req.body;
-  const response = await service.bookService(userId, timeSlotId);
-  return res.status(200).json(new ApiReponse(200, response, 'Service deleted successfully'));
-});
+  const { userId, timeSlotId } = req.body
+  const response = await service.bookService(userId, timeSlotId)
+  return res
+    .status(200)
+    .json(new ApiReponse(200, response, 'Service deleted successfully'))
+})
 
-export const getUpcomingEvents = asyncHandler(async (req: Request, res: Response) => {
-  const { userId } = req.body;
-  const response = await service.getUpcomingEvents(userId);
-  return res.status(200).json(new ApiReponse(200, response, 'Service deleted successfully'));
-});
-
+export const getUpcomingEvents = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.body
+    const response = await service.getUpcomingEvents(userId)
+    return res
+      .status(200)
+      .json(new ApiReponse(200, response, 'Service deleted successfully'))
+  },
+)
+// Get all active service providers
+export const filterServiceProvider = asyncHandler(
+  async (req: Request, res: Response) => {
+    try {
+      const result = await service.getServiceProvidersWithServices()
+      return res.status(200).json(result)
+    } catch (err: any) {
+      return res
+        .status(500)
+        .json(new ApiError(500, 'Failed to fetch service providers', err))
+    }
+  },
+)

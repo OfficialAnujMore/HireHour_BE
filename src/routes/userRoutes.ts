@@ -1,9 +1,28 @@
-import { Router } from 'express';
-import { deleteAllUsers, getUsers, loginUser, registerUser, updateUserRole, verifyPhoneNumber, verifyEmailAndUserName } from '../controllers/userController';
-import { REGISTER_USER, GET_ALL_USERS, LOGIN_USER, DELETE_ALL_USERS, UPDATE_ROLE, VERIFY_EMAIL, VERIFY_PHONE, FORGET_EMAIL, FORGET_USERNAME, FORGET_PASSWORD } from './constants';
-import { authentication } from '../middlewares/authentication';
+import { Router } from 'express'
+import {
+  deleteAllUsers,
+  getUsers,
+  loginUser,
+  registerUser,
+  updateUserRole,
+  verifyPhoneNumber,
+  verifyEmailAndUserName,
+} from '../controllers/userController'
+import {
+  REGISTER_USER,
+  GET_ALL_USERS,
+  LOGIN_USER,
+  DELETE_ALL_USERS,
+  UPDATE_ROLE,
+  VERIFY_EMAIL,
+  VERIFY_PHONE,
+  FORGET_EMAIL,
+  FORGET_USERNAME,
+  FORGET_PASSWORD,
+} from './constants'
+import { authentication } from '../middlewares/authentication'
 
-const userRouter = Router();
+const userRouter = Router()
 const authRouter = Router()
 
 /*
@@ -24,8 +43,8 @@ user routes
 */
 
 // Auth routes
-authRouter.post(REGISTER_USER, registerUser);
-authRouter.post(LOGIN_USER, loginUser);
+authRouter.post(REGISTER_USER, registerUser)
+authRouter.post(LOGIN_USER, loginUser)
 // TODO
 // authRouter.post(FORGET_EMAIL, loginUser);
 // authRouter.post(FORGET_USERNAME, loginUser);
@@ -35,12 +54,11 @@ authRouter.post(VERIFY_EMAIL, verifyEmailAndUserName)
 authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
 
 // Authenticated routes
-userRouter.post(UPDATE_ROLE, authentication, updateUserRole);
-
+userRouter.post(UPDATE_ROLE, authentication, updateUserRole)
 
 // Dev method
-userRouter.get(GET_ALL_USERS, authentication, getUsers);
-userRouter.get(DELETE_ALL_USERS, authentication, deleteAllUsers);
+userRouter.get(GET_ALL_USERS, authentication, getUsers)
+userRouter.get(DELETE_ALL_USERS, authentication, deleteAllUsers)
 
 /*
 TODO: Complete this method after all the validations are done
@@ -54,7 +72,4 @@ TODO: Complete this method after all the validations are done
 
 */
 
-
-
-export default { authRouter, userRouter };
-
+export default { authRouter, userRouter }

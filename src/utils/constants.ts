@@ -4,16 +4,16 @@ export const USERNAME_REGEX = /^[a-zA-Z][a-zA-Z0-9_]*$/
 export const BECRYPT_SALT_VALUE = 8
 
 export const USER_PREVIEW_BODY = {
-    id: true,
-    firstName: true,
-    lastName: true,
-    email: true,
-    username: true,
-    phoneNumber: true,
-    userRole: true,
-    token: true,
-    refreshToken: true,
-    lastLogin: true,
-    createdAt: true,
-    updatedAt: true,
+  id: true,
+  firstName: true,
+  lastName: true,
+  email: true,
+  username: true,
+  phoneNumber: true,
+  userRole: true,
+  token: true,
+  refreshToken: true,
+  lastLogin: true,
+  createdAt: true,
+  updatedAt: true,
 }
