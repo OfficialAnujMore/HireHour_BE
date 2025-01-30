@@ -39,16 +39,16 @@ const updateUserRole = async (id: string, isEnrolled: boolean) => {
       id: id,
     },
     data: {
-      isCustomer: isEnrolled,
+      isServiceProvider: isEnrolled,
     },
     select: USER_PREVIEW_BODY,
   })
 }
 
-const validateUserRole = async (id: string, isCustomer: boolean) => {
+const validateUserRole = async (id: string, isServiceProvider: boolean) => {
   return await prisma.user.findFirst({
     where: {
-      AND: [{ id }, { isCustomer }],
+      AND: [{ id }, { isServiceProvider }],
     },
     select: USER_PREVIEW_BODY,
   })

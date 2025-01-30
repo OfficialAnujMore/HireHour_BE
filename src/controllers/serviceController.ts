@@ -24,14 +24,14 @@ import { Schedule, ServicePreview } from '@prisma/client'
 // Controller to add a service
 export const createService = asyncHandler(
   async (
-    req: Request<{}, {}, { id: string; isCustomer: boolean; serviceData: any }>,
+    req: Request<{}, {}, { id: string; isServiceProvider: boolean; serviceData: any }>,
     res: Response,
   ) => {
     try {
-      const { id, isCustomer, serviceData } = req.body
+      const { id, isServiceProvider, serviceData } = req.body
 
       // Ensure the user is a service provider
-      if (isCustomer) {
+      if (isServiceProvider) {
         return res
           .status(403)
           .json(new ApiError(403, ERROR_MESSAGE.notAuthorized))
@@ -97,7 +97,7 @@ export const updateService = asyncHandler(
       {},
       {
         id: string
-        isCustomer: boolean
+        isServiceProvider: boolean
         serviceId: string
         servicePreviews: ServicePreview[]
         schedules: Schedule
@@ -109,7 +109,7 @@ export const updateService = asyncHandler(
     try {
       const {
         id,
-        isCustomer,
+        isServiceProvider,
         serviceId,
         servicePreviews,
         schedules,
@@ -117,7 +117,7 @@ export const updateService = asyncHandler(
       } = req.body
 
       // Ensure the user is a service provider
-      if (isCustomer) {
+      if (isServiceProvider) {
         return res
           .status(403)
           .json(new ApiError(403, ERROR_MESSAGE.notAuthorized))
@@ -153,7 +153,7 @@ export const updateService = asyncHandler(
 // Controller to get service details by service id
 export const getServiceById = asyncHandler(
   async (
-    req: Request<{}, {}, { id: string; isCustomer: boolean; serviceData: any }>,
+    req: Request<{}, {}, { id: string; isServiceProvider: boolean; serviceData: any }>,
     res: Response,
   ) => {
     try {
@@ -173,6 +173,8 @@ export const getServiceById = asyncHandler(
 // Controller to get all the services created by an service provider
 export const getMyService = asyncHandler(
   async (req: Request, res: Response) => {
+    console.log(req.body.id);
+    
     const response = await service.getMyService(req.body.id)
     return res
       .status(200)
@@ -205,6 +207,8 @@ export const getServicesByCategory = asyncHandler(
       req.query.id as string | undefined,
       categories,
     )
+    console.log(response);
+    
 
     return res
       .status(200)
@@ -221,11 +225,11 @@ export const getServicesByCategory = asyncHandler(
 // Controller to book a service
 export const bookService = asyncHandler(async (req: Request, res: Response) => {
   try {
-    const { userId, timeSlotId } = req.body
-    const response = await service.bookService(userId, timeSlotId)
+    const { userId, timeSlotIds } = req.body
+    const response = await service.bookService(userId, timeSlotIds)
     return res
       .status(200)
-      .json(new ApiReponse(200, response, 'Service deleted successfully'))
+      .json(new ApiReponse(200, response, 'Slot booked successfully'))
   } catch (err: any) {
     return res
       .status(500)
@@ -238,8 +242,10 @@ export const getUpcomingEvents = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId } = req.body
     const response = await service.getUpcomingEvents(userId)
+    console.log('Controller to get upcoming events for a user',response);
+    
     return res
       .status(200)
-      .json(new ApiReponse(200, response, 'Service deleted successfully'))
+      .json(new ApiReponse(200, response, 'Service fetched  successfully'))
   },
 )

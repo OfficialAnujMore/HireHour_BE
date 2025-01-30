@@ -12,6 +12,7 @@ interface RegisterUserBody {
 interface ValidateUsernameAndEmailBody {
   email: string
   password: string
+  phoneNumber: string
   username: string
 }
 

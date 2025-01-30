@@ -16,7 +16,7 @@ model User {
   username       String     @unique
   phoneNumber    String
   password       String
-  isCustomer     Boolean    @default(true)
+  isServiceProvider     Boolean    @default(false)
   avatarUri      String?
   token          String?
   refreshToken   String?
@@ -79,7 +79,7 @@ model TimeSlot {
 
 model OTP {
   id          String   @id @default(uuid())
-  otp         Int
+  otp         String
   key         String
   field       String
   type        String

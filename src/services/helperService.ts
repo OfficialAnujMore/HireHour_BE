@@ -37,7 +37,7 @@ const validatePhoneNumber = async (phoneNumber: string) => {
 }
 
 const storeOTP = async (
-  otp: number,
+  otp: any,
   key: string,
   field: string,
   type: string,
@@ -50,6 +50,24 @@ const storeOTP = async (
       field,
       type,
       expireAfter,
+    },
+  })
+}
+
+const verifyOTP = async (key: string) => {
+  return await prisma.oTP.findFirst({
+    where: {
+      key: key,
+    },
+    select: {
+      otp: true,
+    },
+  })
+}
+const deleteVerifiedOTP = async (key: string, otp: string) => {
+  return await prisma.oTP.deleteMany({
+    where: {
+      key: key,
     },
   })
 }
@@ -70,4 +88,6 @@ export default {
   verifyUserEmail,
   verifyUser,
   storeOTP,
+  verifyOTP,
+  deleteVerifiedOTP
 }

@@ -27,7 +27,7 @@ import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 export const verifyEmailAndUserName = asyncHandler(
   async (req: Request<{}, {}, ValidateUsernameAndEmailBody>, res: Response) => {
     try {
-      const { username, email, password } = req.body
+      const { username, email, password, phoneNumber } = req.body
 
       // User field validation
       if (!EMAIL_REGEX.test(email)) {
@@ -64,31 +64,6 @@ export const verifyEmailAndUserName = asyncHandler(
           .json(new ApiError(400, ERROR_MESSAGE.duplicateUsername))
       }
 
-      const emailOTP = await generateOTP()
-      const storeOTPResponse = await helperService.storeOTP(
-        emailOTP,
-        email,
-        'email',
-        'registration',
-        otpExpireAfter(),
-      )
-      // TODO: Function call to send OTP to user email via sendgrid
-      return res
-        .status(200)
-        .json(new ApiReponse(200, {}, SUCCESS_MESSAGE.emailOTPSuccess))
-    } catch (err: any) {
-      return res
-        .status(500)
-        .json(new ApiError(500, ERROR_MESSAGE.generalError, err))
-    }
-  },
-)
-
-export const verifyPhoneNumber = asyncHandler(
-  async (req: Request<{}, {}, { phoneNumber: string }>, res: Response) => {
-    try {
-      const { phoneNumber } = req.body
-
       // Validate duplicate phonenumber
       const duplicatePhoneNumber =
         await helperService.validatePhoneNumber(phoneNumber)
@@ -99,17 +74,96 @@ export const verifyPhoneNumber = asyncHandler(
       }
 
       const phoneNumberOTP = await generateOTP()
-      const storeOTPResponse = await helperService.storeOTP(
+      const emailOTP = await generateOTP()
+
+      const storeEmailOTPResponse = await helperService.storeOTP(
         phoneNumberOTP,
         phoneNumber,
         'phoneNumber',
         'registration',
         otpExpireAfter(),
       )
-      // TODO: Function call to send OTP to user message via sendgrid
+      const storePhoneOTPResponse = await helperService.storeOTP(
+        emailOTP,
+        email,
+        'email',
+        'registration',
+        otpExpireAfter(),
+      )
+      // TODO: Function call to send OTP to user email via sendgrid
       return res
         .status(200)
-        .json(new ApiReponse(200, {}, SUCCESS_MESSAGE.phoneOTPSuccess))
+        .json(
+          new ApiReponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+        )
+    } catch (err: any) {
+      return res
+        .status(500)
+        .json(new ApiError(500, ERROR_MESSAGE.generalError, err))
+    }
+  },
+)
+
+// export const verifyPhoneNumber = asyncHandler(
+//   async (req: Request<{}, {}, { phoneNumber: string }>, res: Response) => {
+//     try {
+//       const { phoneNumber } = req.body
+
+//       // Validate duplicate phonenumber
+//       const duplicatePhoneNumber =
+//         await helperService.validatePhoneNumber(phoneNumber)
+//       if (duplicatePhoneNumber) {
+//         return res
+//           .status(400)
+//           .json(new ApiError(400, ERROR_MESSAGE.duplicatePhoneNumber))
+//       }
+
+//       const phoneNumberOTP = await generateOTP()
+//       const storeOTPResponse = await helperService.storeOTP(
+//         phoneNumberOTP,
+//         phoneNumber,
+//         'phoneNumber',
+//         'registration',
+//         otpExpireAfter(),
+//       )
+//       // TODO: Function call to send OTP to user message via sendgrid
+//       return res
+//         .status(200)
+//         .json(new ApiReponse(200, {}, SUCCESS_MESSAGE.phoneOTPSuccess))
+//     } catch (err: any) {
+//       return res
+//         .status(500)
+//         .json(new ApiError(500, ERROR_MESSAGE.generalError, err))
+//     }
+//   },
+// )
+
+export const verifyOTP = asyncHandler(
+  async (req: Request<{}, {}, { key: string; otp: string }>, res: Response) => {
+    try {
+      const { key, otp } = req.body
+
+      const OTPStatus = await helperService.verifyOTP(key)
+      console.log({ OTPStatus })
+      if (OTPStatus?.otp === otp) {
+        const deleteOTPResponse = await helperService.deleteVerifiedOTP(key, otp)
+        return res
+          .status(200)
+          .json(
+            new ApiReponse(
+              200,
+              { otpStatus: true },
+              SUCCESS_MESSAGE.otpVerified,
+            ),
+          )
+      } else {
+        // TODO: Function call to send OTP to user message via sendgrid
+        return res
+          .status(200)
+          .json(
+            new ApiReponse(400, { otpStatus: false }, ERROR_MESSAGE.invalidOTP),
+          )
+      }
     } catch (err: any) {
       return res
         .status(500)
@@ -197,7 +251,6 @@ export const updateUserRole = asyncHandler(
   async (req: Request<{}, {}, UpdateUserRoleBody>, res: Response) => {
     try {
       const { id, isEnrolled } = req.body
-
       if (!id) {
         return res
           .status(400)
@@ -212,6 +265,8 @@ export const updateUserRole = asyncHandler(
       }
 
       const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled)
+      console.log(roleUpdateStatus);
+      
       if (!roleUpdateStatus) {
         return res
           .status(500)

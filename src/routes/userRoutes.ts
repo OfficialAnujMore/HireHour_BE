@@ -5,8 +5,9 @@ import {
   loginUser,
   registerUser,
   updateUserRole,
-  verifyPhoneNumber,
+  // verifyPhoneNumber,
   verifyEmailAndUserName,
+  verifyOTP,
 } from '../controllers/userController'
 import {
   REGISTER_USER,
@@ -14,11 +15,12 @@ import {
   LOGIN_USER,
   DELETE_ALL_USERS,
   UPDATE_ROLE,
-  VERIFY_EMAIL,
+  VERIFY_EMAIL_AND_USERNAME,
   VERIFY_PHONE,
   FORGET_EMAIL,
   FORGET_USERNAME,
   FORGET_PASSWORD,
+  VERIFY_OTP,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
 
@@ -49,9 +51,11 @@ authRouter.post(LOGIN_USER, loginUser)
 // authRouter.post(FORGET_EMAIL, loginUser);
 // authRouter.post(FORGET_USERNAME, loginUser);
 // authRouter.post(FORGET_PASSWORD, loginUser);
+authRouter.post(VERIFY_EMAIL_AND_USERNAME, verifyEmailAndUserName)
+// authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
+authRouter.post(VERIFY_OTP, verifyOTP)
 
-authRouter.post(VERIFY_EMAIL, verifyEmailAndUserName)
-authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
+
 
 // Authenticated routes
 userRouter.post(UPDATE_ROLE, authentication, updateUserRole)

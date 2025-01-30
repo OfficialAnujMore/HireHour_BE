@@ -15,8 +15,8 @@ export const generateTokens = async (data: any) => {
   return { accessToken, refreshToken }
 }
 
-export const generateOTP = async (): Promise<number> => {
-  return Math.floor(100000 + Math.random() * 900000) // 6-digit OTP
+export const generateOTP = async (): Promise<String> => {
+  return Math.floor(100000 + Math.random() * 900000).toString() // 6-digit OTP
 }
 
 export const otpExpireAfter = () => {

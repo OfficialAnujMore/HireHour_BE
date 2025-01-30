@@ -174,10 +174,11 @@ const getMyService = async (id?: string) => {
   const services = await prisma.user.findMany({
     where: {
       AND: [
-        { isCustomer: false },
+        { id: id },
+        { isServiceProvider: true },
         { deletedAt: null },
         { isDisabled: false },
-        ...(id ? [{ id }] : []),
+        // ...(id ? [{ id }] : []),
       ],
     },
     select: {
@@ -203,6 +204,8 @@ const getServicesByCategory = async (
   userId: string | undefined,
   categories: string[],
 ) => {
+  console.log(userId, categories)
+
   const services = await prisma.services.findMany({
     where: {
       deletedAt: null,
@@ -223,7 +226,7 @@ const getServicesByCategory = async (
           email: true,
           username: true,
           phoneNumber: true,
-          isCustomer: true,
+          isServiceProvider: true,
           avatarUri: true,
         },
       },
@@ -243,7 +246,7 @@ const getServicesByCategory = async (
     email: service.user.email,
     username: service.user.username,
     phoneNumber: service.user.phoneNumber,
-    isCustomer: service.user.isCustomer,
+    isServiceProvider: service.user.isServiceProvider,
     avatarUri: service.user.avatarUri || '',
     serviceId: service.id,
     title: service.title,
@@ -275,11 +278,9 @@ const getServicesByCategory = async (
     })),
   }))
 }
-
-const bookService = async (userId: string, timeSlotId: string) => {
-
-  return await prisma.timeSlot.update({
-    where: { id: timeSlotId },
+const bookService = async (userId: string, timeSlotIds: string[]) => {
+  return await prisma.timeSlot.updateMany({
+    where: { id: { in: timeSlotIds } },
     data: {
       bookedUserId: userId,
       available: false,
@@ -317,6 +318,8 @@ const getUpcomingEvents = async (userId: string) => {
     createdAt: event.schedule.Services?.createdAt || null,
     updatedAt: event.schedule.Services?.updatedAt || null,
   }))
+
+  console.log('formattedEvents', formattedEvents)
 
   return formattedEvents
 }

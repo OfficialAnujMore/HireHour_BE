@@ -10,7 +10,7 @@ export const USER_PREVIEW_BODY = {
   email: true,
   username: true,
   phoneNumber: true,
-  isCustomer: true,
+  isServiceProvider: true,
   token: true,
   refreshToken: true,
   lastLogin: true,
