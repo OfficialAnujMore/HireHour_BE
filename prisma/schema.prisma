@@ -16,17 +16,18 @@ model User {
   username       String     @unique
   phoneNumber    String
   password       String
-  userRole       String     @default("CUSTOMER")
+  isServiceProvider     Boolean    @default(false)
   avatarUri      String?
   token          String?
   refreshToken   String?
   lastLogin      DateTime   @default(now())
-  isDeleted      Boolean    @default(false)
+  deletedAt      DateTime?
   isDisabled     Boolean    @default(false)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
   Services       Services[]
   userPreference String[]
+  TimeSlot       TimeSlot[]
 
   @@index(fields: [id, email, username])
 }
@@ -39,9 +40,10 @@ model Services {
   schedule       Schedule[]
   chargesPerHour String
   category       String
+  ratings        String           @default("5.0")
   user           User             @relation(fields: [userId], references: [id])
   userId         String
-  isDeleted      Boolean          @default(false)
+  deletedAt      DateTime?
   isDisabled     Boolean          @default(false)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -66,11 +68,22 @@ model Schedule {
 }
 
 model TimeSlot {
-  id         String   @id @default(uuid())
-  time       String
-  available  Boolean
-  schedule   Schedule @relation(fields: [scheduleId], references: [id])
-  scheduleId String
+  id           String   @id @default(uuid())
+  time         String
+  available    Boolean
+  bookedUser   User?    @relation(fields: [bookedUserId], references: [id])
+  bookedUserId String? // Nullable to allow unbooked slots
+  schedule     Schedule @relation(fields: [scheduleId], references: [id])
+  scheduleId   String
+}
+
+model OTP {
+  id          String   @id @default(uuid())
+  otp         String
+  key         String
+  field       String
+  type        String
+  expireAfter DateTime
 }
 
 enum Role {
