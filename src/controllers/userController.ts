@@ -27,7 +27,7 @@ import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 export const verifyEmailAndUserName = asyncHandler(
   async (req: Request<{}, {}, ValidateUsernameAndEmailBody>, res: Response) => {
     try {
-      const { username, email, password, phoneNumber } = req.body
+      const { username, email, password } = req.body
 
       // User field validation
       if (!EMAIL_REGEX.test(email)) {
@@ -64,25 +64,25 @@ export const verifyEmailAndUserName = asyncHandler(
           .json(new ApiError(400, ERROR_MESSAGE.duplicateUsername))
       }
 
-      // Validate duplicate phonenumber
-      const duplicatePhoneNumber =
-        await helperService.validatePhoneNumber(phoneNumber)
-      if (duplicatePhoneNumber) {
-        return res
-          .status(400)
-          .json(new ApiError(400, ERROR_MESSAGE.duplicatePhoneNumber))
-      }
+      // // Validate duplicate phonenumber
+      // const duplicatePhoneNumber =
+      //   await helperService.validatePhoneNumber(phoneNumber)
+      // if (duplicatePhoneNumber) {
+      //   return res
+      //     .status(400)
+      //     .json(new ApiError(400, ERROR_MESSAGE.duplicatePhoneNumber))
+      // }
 
-      const phoneNumberOTP = await generateOTP()
+      // const phoneNumberOTP = await generateOTP()
       const emailOTP = await generateOTP()
 
-      const storeEmailOTPResponse = await helperService.storeOTP(
-        phoneNumberOTP,
-        phoneNumber,
-        'phoneNumber',
-        'registration',
-        otpExpireAfter(),
-      )
+      // const storeEmailOTPResponse = await helperService.storeOTP(
+      //   phoneNumberOTP,
+      //   phoneNumber,
+      //   'phoneNumber',
+      //   'registration',
+      //   otpExpireAfter(),
+      // )
       const storePhoneOTPResponse = await helperService.storeOTP(
         emailOTP,
         email,

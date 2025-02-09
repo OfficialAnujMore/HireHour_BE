@@ -9,6 +9,8 @@ export const authentication = async (
 ) => {
   const authHeader = req.headers['authorization']
   const token = authHeader && authHeader.split(' ')[1]
+  console.log(authHeader);
+  
 
   if (!token) {
     return res.status(401).json(new ApiError(401, 'Unauthorized user'))

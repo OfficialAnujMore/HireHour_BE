@@ -9,25 +9,26 @@ generator client {
 }
 
 model User {
-  id             String     @id @default(uuid())
-  firstName      String
-  lastName       String
-  email          String     @unique
-  username       String     @unique
-  phoneNumber    String
-  password       String
-  isServiceProvider     Boolean    @default(false)
-  avatarUri      String?
-  token          String?
-  refreshToken   String?
-  lastLogin      DateTime   @default(now())
-  deletedAt      DateTime?
-  isDisabled     Boolean    @default(false)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  Services       Services[]
-  userPreference String[]
-  TimeSlot       TimeSlot[]
+  id                String     @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String     @unique
+  username          String     @unique
+  phoneNumber       String
+  password          String
+  isServiceProvider Boolean    @default(false)
+  avatarUri         String?
+  token             String?
+  refreshToken      String?
+  lastLogin         DateTime   @default(now())
+  deletedAt         DateTime?
+  isDisabled        Boolean    @default(false)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  Services          Services[]
+  userPreference    String[]
+  TimeSlot          TimeSlot[]
+  Schedule          Schedule[]
 
   @@index(fields: [id, email, username])
 }
@@ -57,23 +58,26 @@ model ServicePreview {
 }
 
 model Schedule {
-  id         String     @id @default(uuid())
-  day        String
-  month      String
-  fullDate   DateTime
-  date       String
-  timeSlots  TimeSlot[]
-  Services   Services?  @relation(fields: [servicesId], references: [id])
-  servicesId String?
+  id           String    @id @default(uuid())
+  // day        String
+  // month      String
+  // fullDate   DateTime
+  date         String
+  isAvailable  Boolean
+  // timeSlots  TimeSlot[]
+  Services     Services? @relation(fields: [servicesId], references: [id])
+  servicesId   String?
+  bookedUser   User?     @relation(fields: [bookedUserId], references: [id])
+  bookedUserId String?
 }
 
 model TimeSlot {
-  id           String   @id @default(uuid())
+  id           String  @id @default(uuid())
   time         String
   available    Boolean
-  bookedUser   User?    @relation(fields: [bookedUserId], references: [id])
+  bookedUser   User?   @relation(fields: [bookedUserId], references: [id])
   bookedUserId String? // Nullable to allow unbooked slots
-  schedule     Schedule @relation(fields: [scheduleId], references: [id])
+  // schedule     Schedule @relation(fields: [scheduleId], references: [id])
   scheduleId   String
 }
 

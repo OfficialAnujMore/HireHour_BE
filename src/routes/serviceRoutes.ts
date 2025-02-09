@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import {
-  bookService,
   createService,
-  deleteService,
+  bookService,
+  // deleteService,
   getMyService,
   getServicesByCategory,
   getUpcomingEvents,
@@ -22,7 +22,7 @@ const serviceRouter = Router()
 serviceRouter.post(ADD_SERVICE, authentication, createService)
 serviceRouter.post(GET_USER_SERVICES, authentication, getMyService)
 serviceRouter.get(GET_SERVICE_PROVIDERS, authentication, getServicesByCategory)
-serviceRouter.post(DELETE_SERVICE, authentication, deleteService)
+// serviceRouter.post(DELETE_SERVICE, authentication, deleteService)
 serviceRouter.post(BOOK_SERVICE, authentication, bookService)
 serviceRouter.post(UPCOMING_EVENTS, authentication, getUpcomingEvents)
 
