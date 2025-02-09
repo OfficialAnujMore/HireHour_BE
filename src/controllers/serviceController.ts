@@ -49,7 +49,7 @@ export const createService = asyncHandler(
           .json(new ApiError(400, ERROR_MESSAGE.userNotFound))
       }
 
-      console.log('Create service data', serviceData)
+      
 
       // Create the service
       const response = await service.createService(
@@ -61,7 +61,7 @@ export const createService = asyncHandler(
         .status(201)
         .json(new ApiReponse(201, {}, SUCCESS_MESSAGE.serviceCreated))
     } catch (err: any) {
-      console.log(err)
+      
       return res
         .status(500)
         .json(new ApiError(500, ERROR_MESSAGE.generalError, err))
@@ -147,7 +147,7 @@ export const createService = asyncHandler(
 //         .status(201)
 //         .json(new ApiReponse(201, response, SUCCESS_MESSAGE.serviceCreated))
 //     } catch (err: any) {
-//       console.log(err)
+//       
 
 //       return res
 //         .status(500)
@@ -179,7 +179,7 @@ export const createService = asyncHandler(
 // // Controller to get all the services created by an service provider
 export const getMyService = asyncHandler(
   async (req: Request, res: Response) => {
-    console.log(req.body.id)
+    
 
     const response = await service.getMyService(req.body.id)
     return res
@@ -193,7 +193,7 @@ export const getMyService = asyncHandler(
 // Controller to get all services based on user preferences (Category)
 export const getServicesByCategory = asyncHandler(
   async (req: Request, res: Response) => {
-    console.log()
+    
 
     let categories: string[] = []
     if (req.query.category) {
@@ -215,7 +215,7 @@ export const getServicesByCategory = asyncHandler(
       req.query.id as string | undefined,
       categories,
     )
-    console.log(response)
+    
 
     return res
       .status(200)
@@ -233,9 +233,9 @@ export const getServicesByCategory = asyncHandler(
 export const bookService = asyncHandler(async (req: Request, res: Response) => {
   try {
     const { userId, schedule } = req.body
-    console.log('bookService BE Controller', { userId, schedule })
+    
     const response = await service.bookService(userId, schedule)
-    console.log({ response })
+    
 
     return res
       .status(200)
@@ -252,7 +252,7 @@ export const getUpcomingEvents = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId } = req.body
     const response = await service.getUpcomingEvents(userId)
-    console.log('Controller to get upcoming events for a user', response)
+    
 
     return res
       .status(200)

@@ -144,7 +144,7 @@ export const verifyOTP = asyncHandler(
       const { key, otp } = req.body
 
       const OTPStatus = await helperService.verifyOTP(key)
-      console.log({ OTPStatus })
+      
       if (OTPStatus?.otp === otp) {
         const deleteOTPResponse = await helperService.deleteVerifiedOTP(key, otp)
         return res
@@ -265,7 +265,7 @@ export const updateUserRole = asyncHandler(
       }
 
       const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled)
-      console.log(roleUpdateStatus);
+      ;
       
       if (!roleUpdateStatus) {
         return res

@@ -219,7 +219,7 @@ const getServicesByCategory = async (
   userId: string | undefined,
   categories: string[],
 ) => {
-  console.log(userId, categories)
+  
 
   const services = await prisma.services.findMany({
     where: {
@@ -294,7 +294,7 @@ const bookService = async (
     isAvailable: boolean
   }[],
 ) => {
-  console.log('asdsdsadsadsaa', userId, schedule)
+  
 
   const updatePromises = schedule.map((scheduleItem) =>
     prisma.schedule.update({
@@ -308,7 +308,7 @@ const bookService = async (
 
   const res = await Promise.all(updatePromises)
 
-  console.log('Res', res)
+  
   return res
 }
 
