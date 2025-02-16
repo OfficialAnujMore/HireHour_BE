@@ -15,6 +15,10 @@ interface ValidateUsernameAndEmailBody {
   username: string
 }
 
+interface ValidatePhoneNumber {
+  phoneNumber: string
+}
+
 interface LoginUserBody {
   email: string
   password: string
@@ -27,6 +31,7 @@ interface UpdateUserRoleBody {
 
 export {
   ValidateUsernameAndEmailBody,
+  ValidatePhoneNumber,
   RegisterUserBody,
   LoginUserBody,
   UpdateUserRoleBody,

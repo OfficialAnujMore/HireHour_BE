@@ -6,9 +6,11 @@ export const SUCCESS_MESSAGE = {
   loginSuccess: 'Login successfull',
   enrollmentSuccess: 'Successfully enrolled as a Service provider',
   serviceCreated: 'Service creation successfull',
+  serviceRetreive: 'Service retrieved successfully',
   // General Success
   success: 'Successfully fetched response',
   deletedSuccessFully: 'Deleted Successfully',
+  bookingSuccessFull: 'Slot booked successfully'
 }
 
 export const ERROR_MESSAGE = {
@@ -27,6 +29,12 @@ export const ERROR_MESSAGE = {
   notAuthorized:
     'User must be enrolled as a service provider to create an service',
   serviceNotFound: 'Service not found',
+  otpGenerationFailed: 'OTP generation Failed',
+  otpVerifcationFailed: 'OTP Verification Failed',
+  serviceFailure: 'Unable to create service',
+  errorInService: 'Failed to retrive service',
+  bookingFailure:"Failed to book service",
+  invalidCategory:"Invalid Category",
 
   // Common Errors
   generalError: 'An error has occured',

@@ -35,133 +35,11 @@ const createService = async (
   })
 }
 
-// const getServiceById = async (serviceId: string) => {
-//   return await prisma.services.findUnique({
-//     where: { id: serviceId },
-//     include: {
-//       servicePreview: true,
-//       schedule: {
-//         include: {
-//           timeSlots: true,
-//         },
-//       },
-//     },
-//   })
-// }
-
-// const updateService = async (
-//   serviceId: string,
-//   updateData: Partial<Services>,
-//   servicePreviews?: ServicePreview[],
-//   schedules?: {
-//     id: string
-//     day: string
-//     month: string
-//     date: string
-//     fullDate: Date
-//     timeSlots: {
-//       id: string
-//       time: string
-//       available: boolean
-//     }[]
-//   }[],
-// ) => {
-//   return await prisma.services.update({
-//     where: { id: serviceId },
-//     data: {
-//       ...updateData,
-//       servicePreview: servicePreviews
-//         ? {
-//             upsert: servicePreviews.map((preview) => ({
-//               where: { id: preview.id || '' },
-//               update: { imageUri: preview.imageUri },
-//               create: { imageUri: preview.imageUri },
-//             })),
-//           }
-//         : undefined,
-//       schedule: schedules
-//         ? {
-//             upsert: schedules.map((schedule) => ({
-//               where: { id: schedule.id || '' },
-//               update: {
-//                 day: schedule.day,
-//                 month: schedule.month,
-//                 date: schedule.date,
-//                 fullDate: schedule.fullDate,
-//                 timeSlots: {
-//                   upsert: schedule.timeSlots.map((timeSlot) => ({
-//                     where: { id: timeSlot.id || '' },
-//                     update: {
-//                       time: timeSlot.time,
-//                       available: timeSlot.available,
-//                     },
-//                     create: {
-//                       time: timeSlot.time,
-//                       available: timeSlot.available,
-//                     },
-//                   })),
-//                 },
-//               },
-//               create: {
-//                 day: schedule.day,
-//                 month: schedule.month,
-//                 date: schedule.date,
-//                 fullDate: schedule.fullDate,
-//                 timeSlots: {
-//                   create: schedule.timeSlots.map((timeSlot) => ({
-//                     time: timeSlot.time,
-//                     available: timeSlot.available,
-//                   })),
-//                 },
-//               },
-//             })),
-//           }
-//         : undefined,
-//     },
-//   })
-// }
-
-// const deleteService = async (servicesId: string) => {
-//   // Delete all dependencies and then the service itself
-//   // await prisma.$transaction([
-//   //   prisma.timeSlot.deleteMany({
-//   //     where: {
-//   //       schedule: {
-//   //         servicesId,
-//   //       },
-//   //     },
-//   //   }),
-//   //   prisma.schedule.deleteMany({
-//   //     where: {
-//   //       servicesId,
-//   //     },
-//   //   }),
-//   //   prisma.servicePreview.deleteMany({
-//   //     where: {
-//   //       servicesId,
-//   //     },
-//   //   }),
-//   //   prisma.services.delete({
-//   //     where: {
-//   //       id: servicesId,
-//   //     },
-//   //   }),
-//   // ])
-
-//   return await prisma.services.update({
-//     where: { id: servicesId },
-//     data: {
-//       deletedAt: new Date(),
-//     },
-//   })
-// }
-
 const getMyService = async (id?: string) => {
   const services = await prisma.services.findMany({
     where: {
       deletedAt: null,
       isDisabled: false,
-      // TODO: Disbaled for dev
       userId: id,
     },
     include: {
@@ -178,7 +56,7 @@ const getMyService = async (id?: string) => {
         },
       },
       servicePreview: true,
-      schedule: true, // Fetching schedule directly since timeSlots are removed
+      schedule: true,
     },
   })
 
@@ -219,8 +97,6 @@ const getServicesByCategory = async (
   userId: string | undefined,
   categories: string[],
 ) => {
-  
-
   const services = await prisma.services.findMany({
     where: {
       deletedAt: null,
@@ -229,9 +105,9 @@ const getServicesByCategory = async (
         in: categories,
       },
       // TODO: Disbaled for dev
-      // userId: {
-      //   not: userId,
-      // },
+      userId: {
+        not: userId,
+      },
     },
     include: {
       user: {
@@ -294,8 +170,6 @@ const bookService = async (
     isAvailable: boolean
   }[],
 ) => {
-  
-
   const updatePromises = schedule.map((scheduleItem) =>
     prisma.schedule.update({
       where: { id: scheduleItem.id },
@@ -308,7 +182,6 @@ const bookService = async (
 
   const res = await Promise.all(updatePromises)
 
-  
   return res
 }
 

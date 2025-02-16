@@ -1,19 +1,17 @@
 import { Router } from 'express'
 import {
-  deleteAllUsers,
-  getUsers,
   loginUser,
   registerUser,
   updateUserRole,
   // verifyPhoneNumber,
-  verifyEmailAndUserName,
+  verifyEmailAndUsername,
   verifyOTP,
+  verifyPhoneNumber,
 } from '../controllers/userController'
 import {
   REGISTER_USER,
-  GET_ALL_USERS,
   LOGIN_USER,
-  DELETE_ALL_USERS,
+
   UPDATE_ROLE,
   VERIFY_EMAIL_AND_USERNAME,
   VERIFY_PHONE,
@@ -47,22 +45,19 @@ user routes
 // Auth routes
 authRouter.post(REGISTER_USER, registerUser)
 authRouter.post(LOGIN_USER, loginUser)
+authRouter.post(VERIFY_EMAIL_AND_USERNAME, verifyEmailAndUsername)
+authRouter.post(VERIFY_OTP, verifyOTP)
+authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
 // TODO
 // authRouter.post(FORGET_EMAIL, loginUser);
 // authRouter.post(FORGET_USERNAME, loginUser);
 // authRouter.post(FORGET_PASSWORD, loginUser);
-authRouter.post(VERIFY_EMAIL_AND_USERNAME, verifyEmailAndUserName)
-// authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
-authRouter.post(VERIFY_OTP, verifyOTP)
 
 
 
 // Authenticated routes
 userRouter.post(UPDATE_ROLE, authentication, updateUserRole)
 
-// Dev method
-userRouter.get(GET_ALL_USERS, authentication, getUsers)
-userRouter.get(DELETE_ALL_USERS, authentication, deleteAllUsers)
 
 /*
 TODO: Complete this method after all the validations are done

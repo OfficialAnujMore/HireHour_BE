@@ -1,4 +1,4 @@
-class ApiReponse {
+class ApiResponse {
   statusCode: number
   data: null
   success: boolean
@@ -12,4 +12,4 @@ class ApiReponse {
   }
 }
 
-export { ApiReponse }
+export { ApiResponse }
