@@ -212,3 +212,99 @@ export const updateUserRole = asyncHandler(
       )
   },
 )
+
+export const forgetEmail = asyncHandler(
+  async (req: Request<{}, {}, { phoneNumber: string }>, res: Response) => {
+    const { phoneNumber } = req.body
+
+    // Check if phone number exists
+    const user = await helperService.validatePhoneNumber(phoneNumber)
+    if (!user) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+
+    const emailOTP = await generateOTP()
+    const storeEmailOTPResponse = await helperService.storeOTP(
+      emailOTP,
+      phoneNumber,
+      'phoneNumber',
+      'forgetEmail',
+      otpExpireAfter(),
+    )
+
+    if (!storeEmailOTPResponse) {
+      throw new ApiError(500, ERROR_MESSAGE.otpGenerationFailed)
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+      )
+  },
+)
+
+export const forgetUsername = asyncHandler(
+  async (req: Request<{}, {}, { email: string }>, res: Response) => {
+    const { email } = req.body
+
+    // Check if the user exists with the provided email
+    const user = await helperService.verifyUserEmail(email)
+    if (!user) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+
+    const usernameOTP = await generateOTP()
+    const storeUsernameOTPResponse = await helperService.storeOTP(
+      usernameOTP,
+      email,
+      'email',
+      'forgetUsername',
+      otpExpireAfter(),
+    )
+
+    if (!storeUsernameOTPResponse) {
+      throw new ApiError(500, ERROR_MESSAGE.otpGenerationFailed)
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+      )
+  },
+)
+
+
+export const forgetPassword = asyncHandler(
+  async (req: Request<{}, {}, { email: string }>, res: Response) => {
+    const { email } = req.body
+
+    // Check if the email exists
+    const user = await helperService.verifyUserEmail(email)
+    if (!user) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+
+    const passwordOTP = await generateOTP()
+    const storePasswordOTPResponse = await helperService.storeOTP(
+      passwordOTP,
+      email,
+      'email',
+      'forgetPassword',
+      otpExpireAfter(),
+    )
+
+    if (!storePasswordOTPResponse) {
+      throw new ApiError(500, ERROR_MESSAGE.otpGenerationFailed)
+    }
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+      )
+  },
+)
+
+

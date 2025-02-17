@@ -76,7 +76,11 @@ model OTP {
   expireAfter DateTime
 }
 
-enum Role {
-  CUSTOMER
-  SERVICE_PROVIDER
+model BASE_CONFIGURATION {
+  id          String   @id @default(uuid())
+  key         String
+  value       String
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

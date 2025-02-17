@@ -28,12 +28,12 @@ const authRouter = Router()
 /*
 
 user routes
-1. Register a new user - Done
-2. Login an existing user - Done
-3. Forget email
+1. Register a new user - Completed
+2. Login an existing user - Completed
+3. Forget email 
 4. Forget username
 5. Forget password
-6. Check for existing user with same email or username
+6. Check for existing user with same email or username - Completed
 7. Update user details
 8. Verify user email - Done
 9. Verify user phone number - Done

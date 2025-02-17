@@ -12,12 +12,12 @@ import { Schedule, ServicePreview } from '@prisma/client'
  * 2. Get service by id
  * 3. Update service
  * 4. Delete service
- * 5. Get all services based on category
+ * 5. Get all services based on category   - Completed
  * 6. Get service providers services
- * 7. Book service
+ * 7. Book service - Completed
  * 8. Cancelled booked service
  * 9. Updated booked service
- * 10. Upcoming events
+ * 10. Upcoming events - Completed
  * 11. Past events
  **/
 // Controller to create a service
