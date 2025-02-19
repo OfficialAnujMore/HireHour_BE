@@ -6,11 +6,15 @@ export const SUCCESS_MESSAGE = {
   loginSuccess: 'Login successfull',
   enrollmentSuccess: 'Successfully enrolled as a Service provider',
   serviceCreated: 'Service creation successfull',
+  serviceUpdated: 'Service updated successfull',
+
   serviceRetreive: 'Service retrieved successfully',
   // General Success
   success: 'Successfully fetched response',
   deletedSuccessFully: 'Deleted Successfully',
-  bookingSuccessFull: 'Slot booked successfully'
+  bookingSuccessFull: 'Slot booked successfully',
+  serviceDeleted:"Service deleted"
+
 }
 
 export const ERROR_MESSAGE = {
@@ -35,6 +39,7 @@ export const ERROR_MESSAGE = {
   errorInService: 'Failed to retrive service',
   bookingFailure:"Failed to book service",
   invalidCategory:"Invalid Category",
+  invalidData: "Invalid data",
 
   // Common Errors
   generalError: 'An error has occured',

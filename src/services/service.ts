@@ -1,39 +1,8 @@
-import { Role, ServicePreview, Services } from '@prisma/client'
 import prisma from '../prisma/client'
-
-const createService = async (
-  userService: Services,
-  servicePreviews?: { uri: string }[],
-  selectedDates?: Record<string, { isAvailable: boolean }>,
-) => {
-  return await prisma.services.create({
-    data: {
-      title: userService.title,
-      description: userService.description,
-      chargesPerHour: userService.chargesPerHour,
-      userId: userService.userId,
-      category: userService.category,
-      servicePreview: servicePreviews?.length
-        ? {
-            create: servicePreviews.map((preview) => ({
-              imageUri: preview.uri,
-            })),
-          }
-        : undefined,
-      schedule:
-        selectedDates && Object.keys(selectedDates).length
-          ? {
-              create: Object.entries(selectedDates).map(
-                ([date, { isAvailable }]) => ({
-                  date,
-                  isAvailable: isAvailable, // ✅ Fix: Keeping it as 'selected' since Prisma expects it
-                }),
-              ),
-            }
-          : undefined,
-    },
-  })
-}
+import {
+  Service,
+  UpsertServiceRequestBody,
+} from '../interfaces/serviceInterface'
 
 const getMyService = async (id?: string) => {
   const services = await prisma.services.findMany({
@@ -279,13 +248,107 @@ const getUpcomingEvents = async (userId: string) => {
   return Array.from(uniqueServicesMap.values())
 }
 
+const upsertService = async (
+  serviceData: UpsertServiceRequestBody,
+  serviceId?: string, // Optional for update
+) => {
+  if (serviceId) {
+    // Update existing service: delete old records first
+    await prisma.servicePreview.deleteMany({
+      where: { id: serviceId },
+    })
+    await prisma.schedule.deleteMany({
+      where: { id: serviceId },
+    })
+  }
+
+  // Prepare service payload
+  const servicePayload: any = {
+    title: serviceData.title,
+    description: serviceData.description,
+    chargesPerHour: serviceData.chargesPerHour,
+    userId: serviceData.userId,
+    category: serviceData.category,
+    servicePreview: serviceData.servicePreview?.length
+      ? {
+          create: serviceData.servicePreview.map((preview) => ({
+            imageUri: preview.uri,
+          })),
+        }
+      : undefined,
+    schedule:
+      serviceData.selectedDates && Object.keys(serviceData.selectedDates).length
+        ? {
+            create: Object.entries(serviceData.selectedDates)
+              .filter(([_, { isAvailable }]) => isAvailable) // Only include dates with isAvailable true
+              .map(([date, { isAvailable }]) => ({
+                date,
+                isAvailable,
+              })),
+          }
+        : undefined,
+  }
+
+  if (serviceId) {
+    return await prisma.services.update({
+      where: { id: serviceId },
+      data: servicePayload,
+      include: {
+        servicePreview: true,
+        schedule: true,
+      },
+    })
+  } else {
+    return await prisma.services.create({
+      data: servicePayload,
+      include: {
+        servicePreview: true,
+        schedule: true,
+      },
+    })
+  }
+}
+
+const deleteService = async (
+  serviceId: string, // Required to delete the service
+) => {
+  // Soft delete the service by updating the 'deletedAt' field
+  await prisma.services.update({
+    where: { id: serviceId },
+    data: {
+      deletedAt: new Date(), // Mark service as deleted by setting 'deletedAt'
+    },
+  })
+
+  // Permanently delete the related servicePreview
+  await prisma.servicePreview.deleteMany({
+    where: { servicesId: serviceId }, // Correct field to reference the serviceId
+  })
+
+  // Permanently delete the related schedule
+  await prisma.schedule.deleteMany({
+    where: { servicesId: serviceId }, // Correct field to reference the serviceId
+  })
+}
+
+const getServiceById = async (id: string) => {
+  return await prisma.services.findFirst({
+    where: {
+      AND: [{ id: id },
+
+
+        
+      ],
+    },
+  })
+}
+
 export default {
-  createService,
-  // getServiceById,
-  // updateService,
   getMyService,
-  // deleteService,
   getServicesByCategory,
   bookService,
   getUpcomingEvents,
+  upsertService,
+  deleteService,
+  getServiceById,
 }

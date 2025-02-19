@@ -1,7 +1,7 @@
 import cookieParser from 'cookie-parser'
 import express, { NextFunction, Request, Response } from 'express'
 import cors from 'cors'
-import serviceRouter from './routes/serviceRoutes'
+import serviceRoutes from './routes/serviceRoutes'
 import routes from './routes/userRoutes'
 import {
   V1_AUTH_BASE_ROUTE,
@@ -10,6 +10,8 @@ import {
 } from './routes/constants'
 import { ApiError } from './utils/ApiError'
 const { authRouter, userRouter } = routes
+const { authorizedServiceRouter, serviceRouter } = serviceRoutes
+
 
 const app = express()
 app.use(
@@ -29,7 +31,9 @@ app.use(express.json())
 
 app.use(V1_AUTH_BASE_ROUTE, authRouter)
 app.use(V1_USER_BASE_ROUTE, userRouter)
+app.use(V1_SERVICE_BASE_ROUTE, authorizedServiceRouter)
 app.use(V1_SERVICE_BASE_ROUTE, serviceRouter)
+
 app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
   console.error('Error caught in middleware:', err) // Debugging
 

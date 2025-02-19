@@ -81,6 +81,29 @@ const verifyUser = async (id: string) => {
   })
 }
 
+const existingService = async (id: string) => {
+  return await prisma.services.findFirst({
+    where: {
+      AND: [{ id: id }, { isDisabled: false }, { deletedAt: null }],
+    },
+  })
+}
+
+const verifyUserRole = async (id: string) => {
+  return await prisma.user.findFirst({
+    where: {
+      AND: [
+        { id: id },
+        { isDisabled: false },
+        { deletedAt: null },
+        { isServiceProvider: true },
+      ],
+    },
+    select: CREATE_PREVIEW,
+  })
+}
+
+
 export default {
   validateUserEmail,
   validateUsername,
@@ -90,4 +113,6 @@ export default {
   storeOTP,
   verifyOTP,
   deleteVerifiedOTP,
+  existingService,
+  verifyUserRole
 }
