@@ -8,7 +8,7 @@ generator client {
   // output   = "./node_modules/@prisma/client"
 }
 
-model User {
+model user {
   id                String     @id @default(uuid())
   firstName         String
   lastName          String
@@ -26,23 +26,23 @@ model User {
   isDisabled        Boolean    @default(false)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
-  Services          Services[]
+  services          services[]
   userPreference    String[]
-  Schedule          Schedule[]
+  schedule          schedule[]
 
   @@index(fields: [id, email, username])
 }
 
-model Services {
+model services {
   id             String           @id @default(uuid())
   title          String
   description    String
-  servicePreview ServicePreview[]
-  schedule       Schedule[]
-  chargesPerHour String
+  servicePreview servicePreview[]
+  schedule       schedule[]
+  pricing        Float            @default(0.0)
   category       String
   ratings        String           @default("5.0")
-  user           User             @relation(fields: [userId], references: [id])
+  user           user             @relation(fields: [userId], references: [id])
   userId         String
   deletedAt      DateTime?
   isDisabled     Boolean          @default(false)
@@ -50,24 +50,24 @@ model Services {
   updatedAt      DateTime         @updatedAt
 }
 
-model ServicePreview {
+model servicePreview {
   id         String    @id @default(uuid())
-  imageUri   String
-  services   Services? @relation(fields: [servicesId], references: [id])
+  uri        String
+  services   services? @relation(fields: [servicesId], references: [id])
   servicesId String?
 }
 
-model Schedule {
+model schedule {
   id           String    @id @default(uuid())
   date         String
   isAvailable  Boolean
-  Services     Services? @relation(fields: [servicesId], references: [id])
+  services     services? @relation(fields: [servicesId], references: [id])
   servicesId   String?
-  bookedUser   User?     @relation(fields: [bookedUserId], references: [id])
+  bookedUser   user?     @relation(fields: [bookedUserId], references: [id])
   bookedUserId String?
 }
 
-model OTP {
+model otp {
   id          String   @id @default(uuid())
   otp         String
   key         String
@@ -76,7 +76,7 @@ model OTP {
   expireAfter DateTime
 }
 
-model BASE_CONFIGURATION {
+model baseConfiguration {
   id          String   @id @default(uuid())
   key         String
   value       String

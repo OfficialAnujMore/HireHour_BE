@@ -43,7 +43,7 @@ const storeOTP = async (
   type: string,
   expireAfter: Date,
 ) => {
-  return await prisma.oTP.create({
+  return await prisma.otp.create({
     data: {
       otp,
       key,
@@ -55,7 +55,7 @@ const storeOTP = async (
 }
 
 const verifyOTP = async (key: string) => {
-  return await prisma.oTP.findFirst({
+  return await prisma.otp.findFirst({
     where: {
       key: key,
     },
@@ -65,7 +65,7 @@ const verifyOTP = async (key: string) => {
   })
 }
 const deleteVerifiedOTP = async (key: string, otp: string) => {
-  return await prisma.oTP.deleteMany({
+  return await prisma.otp.deleteMany({
     where: {
       key: key,
     },

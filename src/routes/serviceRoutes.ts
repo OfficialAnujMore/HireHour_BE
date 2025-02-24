@@ -34,7 +34,7 @@ authorizedServiceRouter.post(
   authorization,
   getMyService,
 )
-authorizedServiceRouter.post(
+authorizedServiceRouter.delete(
   DELETE_SERVICE,
   authentication,
   authorization,

@@ -5,7 +5,6 @@ import { ApiResponse } from '../utils/ApiResponse'
 import { asyncHandler } from '../utils/asyncHandler'
 import helperService from '../services/helperService'
 import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
-import { Schedule, ServicePreview } from '@prisma/client'
 import {
   Service,
   UpsertServiceRequestBody,
@@ -110,9 +109,16 @@ export const upsertService = asyncHandler(
 )
 
 export const deleteService = asyncHandler(
-  async (req: Request<{}, {}, { serviceId: string }>, res: Response) => {
-    const { serviceId } = req.body
-    console.log(serviceId)
+  async (req: Request, res: Response) => {
+    const serviceId = req.query.serviceId as string | undefined 
+    console.log({serviceId});
+    
+
+    if (!serviceId) {
+      return res.status(400).json(new ApiError(400, 'Service ID is required'))
+    }
+
+    console.log('Deleting service with ID:', serviceId)
 
     const existingService = await helperService.existingService(serviceId)
     if (!existingService) {
@@ -120,7 +126,8 @@ export const deleteService = asyncHandler(
         .status(404)
         .json(new ApiError(404, ERROR_MESSAGE.serviceNotFound))
     }
-    const response = await service.deleteService(serviceId)
+
+    await service.deleteService(serviceId)
 
     return res
       .status(200)

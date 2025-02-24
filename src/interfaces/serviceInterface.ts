@@ -6,7 +6,7 @@ interface Service {
   description: string
   servicePreview: ServicePreview[]
   schedule: Schedule[]
-  chargesPerHour: string
+  pricing: string
   category: string
   ratings: string
   user: User
@@ -40,7 +40,7 @@ interface UpsertServiceRequestBody {
   title: string
   description: string
   category: string
-  chargesPerHour: string
+  pricing: string
   ratings?: string
   servicePreview?: {
     uri: string

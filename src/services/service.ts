@@ -41,7 +41,7 @@ const getMyService = async (id?: string) => {
     serviceId: service.id,
     title: service.title,
     description: service.description,
-    chargesPerHour: service.chargesPerHour,
+    pricing: service.pricing,
     ratings: service.ratings,
     category: service.category,
     deletedAt: service.deletedAt,
@@ -50,7 +50,7 @@ const getMyService = async (id?: string) => {
     updatedAt: service.updatedAt,
     servicePreview: service.servicePreview.map((preview) => ({
       id: preview.id,
-      imageUri: preview.imageUri,
+      uri: preview.uri,
       servicesId: preview.servicesId,
     })),
     schedule: service.schedule.map((sched) => ({
@@ -73,7 +73,6 @@ const getServicesByCategory = async (
       category: {
         in: categories,
       },
-      // TODO: Disbaled for dev
       userId: {
         not: userId,
       },
@@ -92,9 +91,17 @@ const getServicesByCategory = async (
         },
       },
       servicePreview: true,
-      schedule: true, // Fetching schedule directly since timeSlots are removed
+      schedule: {
+        where: {
+          isAvailable: true,
+        }
+      }, // Fetching schedule directly since timeSlots are removed
     },
+
   })
+
+  console.log(services);
+  
 
   // Shape the result to match the desired structure
   return services.map((service) => ({
@@ -108,7 +115,7 @@ const getServicesByCategory = async (
     serviceId: service.id,
     title: service.title,
     description: service.description,
-    chargesPerHour: service.chargesPerHour,
+    pricing: service.pricing,
     ratings: service.ratings,
     category: service.category,
     deletedAt: service.deletedAt,
@@ -117,7 +124,7 @@ const getServicesByCategory = async (
     updatedAt: service.updatedAt,
     servicePreview: service.servicePreview.map((preview) => ({
       id: preview.id,
-      imageUri: preview.imageUri,
+      uri: preview.uri,
       servicesId: preview.servicesId,
     })),
     schedule: service.schedule.map((sched) => ({
@@ -158,7 +165,7 @@ const getUpcomingEvents = async (userId: string) => {
   const bookedSchedules = await prisma.schedule.findMany({
     where: { bookedUserId: userId },
     include: {
-      Services: {
+      services: {
         include: {
           user: {
             select: {
@@ -185,7 +192,7 @@ const getUpcomingEvents = async (userId: string) => {
   const uniqueServicesMap = new Map<string, any>()
 
   bookedSchedules.forEach((schedule) => {
-    const service = schedule.Services
+    const service = schedule.services
     if (service) {
       const existingService = uniqueServicesMap.get(service.id)
 
@@ -221,7 +228,7 @@ const getUpcomingEvents = async (userId: string) => {
           serviceId: service?.id,
           title: service?.title,
           description: service?.description,
-          chargesPerHour: service?.chargesPerHour,
+          pricing: service?.pricing,
           ratings: service?.ratings,
           category: service?.category,
           deletedAt: service?.deletedAt,
@@ -230,7 +237,7 @@ const getUpcomingEvents = async (userId: string) => {
           updatedAt: service?.updatedAt,
           servicePreview: service?.servicePreview.map((preview) => ({
             id: preview.id,
-            imageUri: preview.imageUri,
+            uri: preview.uri,
             servicesId: preview.servicesId,
           })),
           schedule: (service?.schedule || []).map((sched) => ({
@@ -252,27 +259,30 @@ const upsertService = async (
   serviceData: UpsertServiceRequestBody,
   serviceId?: string, // Optional for update
 ) => {
+  console.log('Upsert data', serviceId)
+
   if (serviceId) {
     // Update existing service: delete old records first
     await prisma.servicePreview.deleteMany({
-      where: { id: serviceId },
+      where: { servicesId: serviceId },
     })
     await prisma.schedule.deleteMany({
-      where: { id: serviceId },
+      where: { servicesId: serviceId },
     })
+    console.log('Both service preview and schedule deletedß')
   }
 
   // Prepare service payload
   const servicePayload: any = {
     title: serviceData.title,
     description: serviceData.description,
-    chargesPerHour: serviceData.chargesPerHour,
+    pricing: parseFloat(serviceData.pricing),
     userId: serviceData.userId,
     category: serviceData.category,
     servicePreview: serviceData.servicePreview?.length
       ? {
           create: serviceData.servicePreview.map((preview) => ({
-            imageUri: preview.uri,
+            uri: preview.uri,
           })),
         }
       : undefined,
@@ -334,11 +344,7 @@ const deleteService = async (
 const getServiceById = async (id: string) => {
   return await prisma.services.findFirst({
     where: {
-      AND: [{ id: id },
-
-
-        
-      ],
+      AND: [{ id: id }],
     },
   })
 }

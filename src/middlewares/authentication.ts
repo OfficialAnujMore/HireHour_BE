@@ -17,8 +17,6 @@ export const authentication = async (
     token,
     process.env.ACCESS_TOKEN_SECRET as string,
     (err, decoded) => {
-      console.log('Decoded', decoded);
-      
       if (err) {
         return res
           .status(401)
