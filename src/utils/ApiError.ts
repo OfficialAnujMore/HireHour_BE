@@ -22,6 +22,12 @@ class ApiError extends Error {
     } else {
       Error.captureStackTrace(this, this.constructor)
     }
+    // Log the error when an instance is created
+    console.error(`ApiError: ${this.message}`, {
+      statusCode: this.statusCode,
+      errors: this.errors,
+      stack: this.stack,
+    })
   }
   toJSON() {
     return {
@@ -29,6 +35,7 @@ class ApiError extends Error {
       data: this.data,
       message: this.message,
       success: this.success,
+      errors: this.errors,
     }
   }
 }
