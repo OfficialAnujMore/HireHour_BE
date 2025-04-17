@@ -48,9 +48,22 @@ const validateUserRole = async (id: string, isServiceProvider: boolean) => {
   })
 }
 
+const upsertFCMToken = async (userId: string, fcmToken: string) => {
+  return await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      fcmToken: fcmToken,
+    },
+    select: UPDATE_PREVIEW,
+  })
+}
+
 export default {
   registerUser,
   loginUser,
   updateUserRole,
   validateUserRole,
+  upsertFCMToken
 }

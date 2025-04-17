@@ -104,6 +104,14 @@ const verifyUserRole = async (id: string) => {
 }
 
 
+const getUserFCMToken = async (id: string) => {
+  return await prisma.user.findFirst({
+    where: {
+      AND: { id: id },
+    },
+  })
+}
+
 export default {
   validateUserEmail,
   validateUsername,
@@ -114,5 +122,6 @@ export default {
   verifyOTP,
   deleteVerifiedOTP,
   existingService,
-  verifyUserRole
+  verifyUserRole,
+  getUserFCMToken
 }

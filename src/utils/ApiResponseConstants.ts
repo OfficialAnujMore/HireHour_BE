@@ -23,4 +23,5 @@ export const UPDATE_PREVIEW = {
   email: true,
   updatedAt: true,
   isServiceProvider: true,
+  fcmToken:true
 }

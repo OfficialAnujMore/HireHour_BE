@@ -30,6 +30,7 @@ export const ERROR_MESSAGE = {
   userEmailFound: "User with this email doesn't exists. Please register!",
   userNotFound: 'User not found',
   enrollmentFailure: 'Fail to enroll as a service provider',
+  FCMtokenFailure:"Failed to enable notification",
   notAuthorized:
     'User must be enrolled as a service provider to create an service',
   serviceNotFound: 'Service not found',

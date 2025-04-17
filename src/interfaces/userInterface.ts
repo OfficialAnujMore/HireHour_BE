@@ -52,6 +52,17 @@ interface UpdateUserRoleBody {
   isEnrolled: boolean
 }
 
+interface UpsterFCMToken{
+  userId:string
+  fcmToken: string
+}
+
+interface FCMSendMessageParams {
+  token: string;
+  title: string;
+  body: string;
+}
+
 export {
   User,
   ValidateUsernameAndEmailBody,
@@ -59,4 +70,6 @@ export {
   RegisterUserBody,
   LoginUserBody,
   UpdateUserRoleBody,
+  UpsterFCMToken,
+  FCMSendMessageParams
 }

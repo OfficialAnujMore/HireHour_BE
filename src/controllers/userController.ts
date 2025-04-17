@@ -10,6 +10,7 @@ import {
 import {
   generateOTP,
   generateTokens,
+  initializePushNotification,
   otpExpireAfter,
 } from '../utils/helperFunctions'
 import { ApiError } from '../utils/ApiError'
@@ -20,6 +21,7 @@ import {
   LoginUserBody,
   RegisterUserBody,
   UpdateUserRoleBody,
+  UpsterFCMToken,
   ValidatePhoneNumber,
   ValidateUsernameAndEmailBody,
 } from '../interfaces/userInterface'
@@ -136,7 +138,7 @@ export const registerUser = asyncHandler(
     data.token = accessToken
     data.refreshToken = refreshToken
     data.password = await bcrypt.hash(data.password, BECRYPT_SALT_VALUE)
-    
+
     const user = await userService.registerUser(data)
 
     if (!user) {
@@ -199,6 +201,16 @@ export const updateUserRole = asyncHandler(
     const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled)
     if (!roleUpdateStatus) {
       throw new ApiError(500, ERROR_MESSAGE.enrollmentFailure)
+    }
+    const fcmResponse = await helperService.getUserFCMToken(id)
+
+    if (fcmResponse?.fcmToken) {
+      const body = {
+        token: fcmResponse.fcmToken,
+        title: 'Horray, Enrolment successful',
+        body: 'Welcome to Music market place. You are successfully enrolled as a service provider',
+      }
+      initializePushNotification(body)
     }
 
     return res
@@ -275,7 +287,6 @@ export const forgetUsername = asyncHandler(
   },
 )
 
-
 export const forgetPassword = asyncHandler(
   async (req: Request<{}, {}, { email: string }>, res: Response) => {
     const { email } = req.body
@@ -307,4 +318,23 @@ export const forgetPassword = asyncHandler(
   },
 )
 
+export const upsertFCMToken = asyncHandler(
+  async (req: Request<{}, {}, UpsterFCMToken>, res: Response) => {
+    const { userId, fcmToken } = req.body
+    if (!userId) {
+      throw new ApiError(400, ERROR_MESSAGE.generalError)
+    }
 
+    const userExist = await helperService.verifyUser(userId)
+    if (!userExist) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+
+    const response = await userService.upsertFCMToken(userId, fcmToken)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.FCMtokenFailure)
+    }
+
+    return res.status(200).json(new ApiResponse(200, response, ''))
+  },
+)
