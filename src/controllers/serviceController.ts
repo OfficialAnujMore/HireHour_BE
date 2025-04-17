@@ -151,9 +151,7 @@ export const deleteService = asyncHandler(
         .json(new ApiError(404, ERROR_MESSAGE.serviceNotFound))
     }
 
-    await service.deleteService(serviceId)
-    console.log('Delete query params', req.query);
-    
+    await service.deleteService(serviceId)    
     if (fcmToken) {
       
       const body = {
@@ -161,7 +159,6 @@ export const deleteService = asyncHandler(
         title: FCM_MESSAGE.slotDeletion.title,
         body: FCM_MESSAGE.slotDeletion.body,
       }
-      console.log(body);
       initializePushNotification(body)
     }
 
