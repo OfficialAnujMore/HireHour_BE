@@ -1,211 +1,71 @@
-import { Role, ServicePreview, Services } from '@prisma/client'
 import prisma from '../prisma/client'
-
-const createService = async (
-  userService: Services,
-  servicePreviews?: ServicePreview[],
-  schedules?: {
-    day: string
-    month: string
-    date: string // Should remain as a string since it's separate from `fullDate`
-    fullDate: Date
-    timeSlots: {
-      time: string
-      available: boolean
-    }[]
-  }[],
-) => {
-  return await prisma.services.create({
-    data: {
-      title: userService.title,
-      description: userService.description,
-      chargesPerHour: userService.chargesPerHour,
-      userId: userService.userId,
-      category: userService.category,
-      servicePreview: servicePreviews
-        ? {
-            create: servicePreviews.map((preview) => ({
-              imageUri: preview.imageUri,
-            })),
-          }
-        : undefined,
-      schedule: schedules
-        ? {
-            create: schedules.map((schedule) => ({
-              day: schedule.day,
-              month: schedule.month,
-              date: schedule.date,
-              fullDate: schedule.fullDate,
-              timeSlots: {
-                create: schedule.timeSlots.map((timeSlot) => ({
-                  time: timeSlot.time,
-                  available: timeSlot.available,
-                })),
-              },
-            })),
-          }
-        : undefined,
-    },
-  })
-}
-
-const getServiceById = async (serviceId: string) => {
-  return await prisma.services.findUnique({
-    where: { id: serviceId },
-    include: {
-      servicePreview: true,
-      schedule: {
-        include: {
-          timeSlots: true,
-        },
-      },
-    },
-  })
-}
-
-const updateService = async (
-  serviceId: string,
-  updateData: Partial<Services>,
-  servicePreviews?: ServicePreview[],
-  schedules?: {
-    id: string
-    day: string
-    month: string
-    date: string
-    fullDate: Date
-    timeSlots: {
-      id: string
-      time: string
-      available: boolean
-    }[]
-  }[],
-) => {
-  return await prisma.services.update({
-    where: { id: serviceId },
-    data: {
-      ...updateData,
-      servicePreview: servicePreviews
-        ? {
-            upsert: servicePreviews.map((preview) => ({
-              where: { id: preview.id || '' },
-              update: { imageUri: preview.imageUri },
-              create: { imageUri: preview.imageUri },
-            })),
-          }
-        : undefined,
-      schedule: schedules
-        ? {
-            upsert: schedules.map((schedule) => ({
-              where: { id: schedule.id || '' },
-              update: {
-                day: schedule.day,
-                month: schedule.month,
-                date: schedule.date,
-                fullDate: schedule.fullDate,
-                timeSlots: {
-                  upsert: schedule.timeSlots.map((timeSlot) => ({
-                    where: { id: timeSlot.id || '' },
-                    update: {
-                      time: timeSlot.time,
-                      available: timeSlot.available,
-                    },
-                    create: {
-                      time: timeSlot.time,
-                      available: timeSlot.available,
-                    },
-                  })),
-                },
-              },
-              create: {
-                day: schedule.day,
-                month: schedule.month,
-                date: schedule.date,
-                fullDate: schedule.fullDate,
-                timeSlots: {
-                  create: schedule.timeSlots.map((timeSlot) => ({
-                    time: timeSlot.time,
-                    available: timeSlot.available,
-                  })),
-                },
-              },
-            })),
-          }
-        : undefined,
-    },
-  })
-}
-
-const deleteService = async (servicesId: string) => {
-  // Delete all dependencies and then the service itself
-  // await prisma.$transaction([
-  //   prisma.timeSlot.deleteMany({
-  //     where: {
-  //       schedule: {
-  //         servicesId,
-  //       },
-  //     },
-  //   }),
-  //   prisma.schedule.deleteMany({
-  //     where: {
-  //       servicesId,
-  //     },
-  //   }),
-  //   prisma.servicePreview.deleteMany({
-  //     where: {
-  //       servicesId,
-  //     },
-  //   }),
-  //   prisma.services.delete({
-  //     where: {
-  //       id: servicesId,
-  //     },
-  //   }),
-  // ])
-
-  return await prisma.services.update({
-    where: { id: servicesId },
-    data: {
-      deletedAt: new Date(),
-    },
-  })
-}
+import {
+  Service,
+  UpsertServiceRequestBody,
+} from '../interfaces/serviceInterface'
 
 const getMyService = async (id?: string) => {
-  const services = await prisma.user.findMany({
+  const services = await prisma.services.findMany({
     where: {
-      AND: [
-        { id: id },
-        { isServiceProvider: true },
-        { deletedAt: null },
-        { isDisabled: false },
-        // ...(id ? [{ id }] : []),
-      ],
+      deletedAt: null,
+      isDisabled: false,
+      userId: id,
     },
-    select: {
-      Services: {
-        where: {
-          AND: [{ deletedAt: null }, { isDisabled: false }],
-        },
-        include: {
-          servicePreview: true,
-          schedule: {
-            include: {
-              timeSlots: true,
-            },
-          },
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          username: true,
+          phoneNumber: true,
+          isServiceProvider: true,
+          avatarUri: true,
         },
       },
+      servicePreview: true,
+      schedule: true,
     },
   })
-  return services.flatMap((user) => user.Services)
+
+  // Shape the result to match the desired structure
+  return services.map((service) => ({
+    userId: service.user.id,
+    name: `${service.user.firstName} ${service.user.lastName}`,
+    email: service.user.email,
+    username: service.user.username,
+    phoneNumber: service.user.phoneNumber,
+    isServiceProvider: service.user.isServiceProvider,
+    avatarUri: service.user.avatarUri || '',
+    serviceId: service.id,
+    title: service.title,
+    description: service.description,
+    pricing: service.pricing,
+    ratings: service.ratings,
+    category: service.category,
+    deletedAt: service.deletedAt,
+    isDisabled: service.isDisabled,
+    createdAt: service.createdAt,
+    updatedAt: service.updatedAt,
+    servicePreview: service.servicePreview.map((preview) => ({
+      id: preview.id,
+      uri: preview.uri,
+      servicesId: preview.servicesId,
+    })),
+    schedule: service.schedule.map((sched) => ({
+      id: sched.id,
+      date: sched.date,
+      selected: sched.isAvailable,
+      servicesId: sched.servicesId,
+    })),
+  }))
 }
 
 const getServicesByCategory = async (
   userId: string | undefined,
   categories: string[],
 ) => {
-  console.log(userId, categories)
-
   const services = await prisma.services.findMany({
     where: {
       deletedAt: null,
@@ -232,12 +92,16 @@ const getServicesByCategory = async (
       },
       servicePreview: true,
       schedule: {
-        include: {
-          timeSlots: true,
-        },
-      },
+        where: {
+          isAvailable: true,
+        }
+      }, // Fetching schedule directly since timeSlots are removed
     },
+
   })
+
+  console.log(services);
+  
 
   // Shape the result to match the desired structure
   return services.map((service) => ({
@@ -251,7 +115,7 @@ const getServicesByCategory = async (
     serviceId: service.id,
     title: service.title,
     description: service.description,
-    chargesPerHour: service.chargesPerHour,
+    pricing: service.pricing,
     ratings: service.ratings,
     category: service.category,
     deletedAt: service.deletedAt,
@@ -260,77 +124,237 @@ const getServicesByCategory = async (
     updatedAt: service.updatedAt,
     servicePreview: service.servicePreview.map((preview) => ({
       id: preview.id,
-      imageUri: preview.imageUri,
+      uri: preview.uri,
       servicesId: preview.servicesId,
     })),
     schedule: service.schedule.map((sched) => ({
       id: sched.id,
-      day: sched.day,
-      month: sched.month,
       date: sched.date,
-      fullDate: sched.fullDate,
+      selected: sched.isAvailable,
       servicesId: sched.servicesId,
-      timeSlots: sched.timeSlots.map((slot) => ({
-        id: slot.id,
-        time: slot.time,
-        available: slot.available,
-      })),
     })),
   }))
 }
-const bookService = async (userId: string, timeSlotIds: string[]) => {
-  return await prisma.timeSlot.updateMany({
-    where: { id: { in: timeSlotIds } },
-    data: {
-      bookedUserId: userId,
-      available: false,
-    },
-  })
+
+const bookService = async (
+  userId: string,
+  schedule: {
+    id: string
+    servicesId: string
+    date: string
+    selected: boolean
+    isAvailable: boolean
+  }[],
+) => {
+  const updatePromises = schedule.map((scheduleItem) =>
+    prisma.schedule.update({
+      where: { id: scheduleItem.id },
+      data: {
+        bookedUserId: userId,
+        isAvailable: scheduleItem.isAvailable,
+      },
+    }),
+  )
+
+  const res = await Promise.all(updatePromises)
+
+  return res
 }
 
 const getUpcomingEvents = async (userId: string) => {
-  const upcomingEvents = await prisma.timeSlot.findMany({
+  const bookedSchedules = await prisma.schedule.findMany({
     where: { bookedUserId: userId },
     include: {
-      schedule: {
+      services: {
         include: {
-          Services: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              username: true,
+              phoneNumber: true,
+              isServiceProvider: true,
+              avatarUri: true,
+            },
+          },
+          servicePreview: true,
+          schedule: {
+            where: { bookedUserId: userId }, // Fetch only schedules booked by the user
+          },
         },
       },
     },
   })
 
-  // Format the response data
-  const formattedEvents = upcomingEvents.map((event) => ({
-    id: event.id,
-    time: event.time,
-    available: event.available,
-    bookedUserId: event.bookedUserId,
-    scheduleId: event.scheduleId,
-    day: event.schedule.day,
-    month: event.schedule.month,
-    fullDate: event.schedule.fullDate,
-    date: event.schedule.date,
-    title: event.schedule.Services?.title || null,
-    description: event.schedule.Services?.description || null,
-    deletedAt: event.schedule.Services?.deletedAt || null,
-    isDisabled: event.schedule.Services?.isDisabled || null,
-    createdAt: event.schedule.Services?.createdAt || null,
-    updatedAt: event.schedule.Services?.updatedAt || null,
-  }))
+  // Use a map to group services by serviceId and merge schedules
+  const uniqueServicesMap = new Map<string, any>()
 
-  console.log('formattedEvents', formattedEvents)
+  bookedSchedules.forEach((schedule) => {
+    const service = schedule.services
+    if (service) {
+      const existingService = uniqueServicesMap.get(service.id)
 
-  return formattedEvents
+      // If the service already exists in the map, merge the schedules
+      if (existingService) {
+        // Filter out duplicate schedules based on schedule.id
+        const newSchedules = (service?.schedule || []).filter(
+          (sched) =>
+            !existingService.schedule.some(
+              (existingSched: any) => existingSched.id === sched.id,
+            ),
+        )
+
+        existingService.schedule = [
+          ...existingService.schedule,
+          ...newSchedules.map((sched) => ({
+            id: sched.id,
+            date: sched.date,
+            selected: true, // Mark schedules as selected since they are booked
+            servicesId: sched.servicesId,
+          })),
+        ]
+      } else {
+        // Otherwise, create a new entry for the service
+        uniqueServicesMap.set(service.id, {
+          userId: service?.user.id,
+          name: `${service?.user.firstName} ${service?.user.lastName}`,
+          email: service?.user.email,
+          username: service?.user.username,
+          phoneNumber: service?.user.phoneNumber,
+          isServiceProvider: service?.user.isServiceProvider,
+          avatarUri: service?.user.avatarUri || '',
+          serviceId: service?.id,
+          title: service?.title,
+          description: service?.description,
+          pricing: service?.pricing,
+          ratings: service?.ratings,
+          category: service?.category,
+          deletedAt: service?.deletedAt,
+          isDisabled: service?.isDisabled,
+          createdAt: service?.createdAt,
+          updatedAt: service?.updatedAt,
+          servicePreview: service?.servicePreview.map((preview) => ({
+            id: preview.id,
+            uri: preview.uri,
+            servicesId: preview.servicesId,
+          })),
+          schedule: (service?.schedule || []).map((sched) => ({
+            id: sched.id,
+            date: sched.date,
+            selected: true, // Mark schedules as selected since they are booked
+            servicesId: sched.servicesId,
+          })),
+        })
+      }
+    }
+  })
+
+  // Return the values of the map as the final result
+  return Array.from(uniqueServicesMap.values())
+}
+
+const upsertService = async (
+  serviceData: UpsertServiceRequestBody,
+  serviceId?: string, // Optional for update
+) => {
+  console.log('Upsert data', serviceId)
+
+  if (serviceId) {
+    // Update existing service: delete old records first
+    await prisma.servicePreview.deleteMany({
+      where: { servicesId: serviceId },
+    })
+    await prisma.schedule.deleteMany({
+      where: { servicesId: serviceId },
+    })
+    console.log('Both service preview and schedule deletedß')
+  }
+
+  // Prepare service payload
+  const servicePayload: any = {
+    title: serviceData.title,
+    description: serviceData.description,
+    pricing: parseFloat(serviceData.pricing),
+    userId: serviceData.userId,
+    category: serviceData.category,
+    servicePreview: serviceData.servicePreview?.length
+      ? {
+          create: serviceData.servicePreview.map((preview) => ({
+            uri: preview.uri,
+          })),
+        }
+      : undefined,
+    schedule:
+      serviceData.selectedDates && Object.keys(serviceData.selectedDates).length
+        ? {
+            create: Object.entries(serviceData.selectedDates)
+              .filter(([_, { isAvailable }]) => isAvailable) // Only include dates with isAvailable true
+              .map(([date, { isAvailable }]) => ({
+                date,
+                isAvailable,
+              })),
+          }
+        : undefined,
+  }
+
+  if (serviceId) {
+    return await prisma.services.update({
+      where: { id: serviceId },
+      data: servicePayload,
+      include: {
+        servicePreview: true,
+        schedule: true,
+      },
+    })
+  } else {
+    return await prisma.services.create({
+      data: servicePayload,
+      include: {
+        servicePreview: true,
+        schedule: true,
+      },
+    })
+  }
+}
+
+const deleteService = async (
+  serviceId: string, // Required to delete the service
+) => {
+  // Soft delete the service by updating the 'deletedAt' field
+  await prisma.services.update({
+    where: { id: serviceId },
+    data: {
+      deletedAt: new Date(), // Mark service as deleted by setting 'deletedAt'
+    },
+  })
+
+  // Permanently delete the related servicePreview
+  await prisma.servicePreview.deleteMany({
+    where: { servicesId: serviceId }, // Correct field to reference the serviceId
+  })
+
+  // Permanently delete the related schedule
+  await prisma.schedule.deleteMany({
+    where: { servicesId: serviceId }, // Correct field to reference the serviceId
+  })
+}
+
+const getServiceById = async (id: string) => {
+  return await prisma.services.findFirst({
+    where: {
+      AND: [{ id: id }],
+    },
+  })
 }
 
 export default {
-  createService,
-  getServiceById,
-  updateService,
   getMyService,
-  deleteService,
   getServicesByCategory,
   bookService,
   getUpcomingEvents,
+  upsertService,
+  deleteService,
+  getServiceById,
 }

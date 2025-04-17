@@ -6,9 +6,15 @@ export const SUCCESS_MESSAGE = {
   loginSuccess: 'Login successfull',
   enrollmentSuccess: 'Successfully enrolled as a Service provider',
   serviceCreated: 'Service creation successfull',
+  serviceUpdated: 'Service updated successfull',
+
+  serviceRetreive: 'Service retrieved successfully',
   // General Success
   success: 'Successfully fetched response',
   deletedSuccessFully: 'Deleted Successfully',
+  bookingSuccessFull: 'Slot booked successfully',
+  serviceDeleted:"Service deleted"
+
 }
 
 export const ERROR_MESSAGE = {
@@ -24,9 +30,17 @@ export const ERROR_MESSAGE = {
   userEmailFound: "User with this email doesn't exists. Please register!",
   userNotFound: 'User not found',
   enrollmentFailure: 'Fail to enroll as a service provider',
+  FCMtokenFailure:"Failed to enable notification",
   notAuthorized:
     'User must be enrolled as a service provider to create an service',
   serviceNotFound: 'Service not found',
+  otpGenerationFailed: 'OTP generation Failed',
+  otpVerifcationFailed: 'OTP Verification Failed',
+  serviceFailure: 'Unable to create service',
+  errorInService: 'Failed to retrive service',
+  bookingFailure:"Failed to book service",
+  invalidCategory:"Invalid Category",
+  invalidData: "Invalid data",
 
   // Common Errors
   generalError: 'An error has occured',

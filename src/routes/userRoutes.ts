@@ -1,19 +1,18 @@
 import { Router } from 'express'
 import {
-  deleteAllUsers,
-  getUsers,
   loginUser,
   registerUser,
   updateUserRole,
+  upsertFCMToken,
   // verifyPhoneNumber,
-  verifyEmailAndUserName,
+  verifyEmailAndUsername,
   verifyOTP,
+  verifyPhoneNumber,
 } from '../controllers/userController'
 import {
   REGISTER_USER,
-  GET_ALL_USERS,
   LOGIN_USER,
-  DELETE_ALL_USERS,
+
   UPDATE_ROLE,
   VERIFY_EMAIL_AND_USERNAME,
   VERIFY_PHONE,
@@ -21,6 +20,7 @@ import {
   FORGET_USERNAME,
   FORGET_PASSWORD,
   VERIFY_OTP,
+  UPSERT_FCM_TOKEN,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
 
@@ -30,12 +30,12 @@ const authRouter = Router()
 /*
 
 user routes
-1. Register a new user - Done
-2. Login an existing user - Done
-3. Forget email
+1. Register a new user - Completed
+2. Login an existing user - Completed
+3. Forget email 
 4. Forget username
 5. Forget password
-6. Check for existing user with same email or username
+6. Check for existing user with same email or username - Completed
 7. Update user details
 8. Verify user email - Done
 9. Verify user phone number - Done
@@ -47,22 +47,19 @@ user routes
 // Auth routes
 authRouter.post(REGISTER_USER, registerUser)
 authRouter.post(LOGIN_USER, loginUser)
+authRouter.post(VERIFY_EMAIL_AND_USERNAME, verifyEmailAndUsername)
+authRouter.post(VERIFY_OTP, verifyOTP)
+authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
 // TODO
 // authRouter.post(FORGET_EMAIL, loginUser);
 // authRouter.post(FORGET_USERNAME, loginUser);
 // authRouter.post(FORGET_PASSWORD, loginUser);
-authRouter.post(VERIFY_EMAIL_AND_USERNAME, verifyEmailAndUserName)
-// authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
-authRouter.post(VERIFY_OTP, verifyOTP)
 
 
 
 // Authenticated routes
 userRouter.post(UPDATE_ROLE, authentication, updateUserRole)
-
-// Dev method
-userRouter.get(GET_ALL_USERS, authentication, getUsers)
-userRouter.get(DELETE_ALL_USERS, authentication, deleteAllUsers)
+userRouter.post(UPSERT_FCM_TOKEN, authentication, upsertFCMToken)
 
 /*
 TODO: Complete this method after all the validations are done

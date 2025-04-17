@@ -1,6 +1,9 @@
 import { Response } from 'express'
 import * as jwt from 'jsonwebtoken'
 import { ApiError } from './ApiError'
+import admin from '../../firebase'
+import { FCMSendMessageParams } from '../interfaces/userInterface'
+import { Message } from 'firebase-admin/messaging';
 export const generateTokens = async (data: any) => {
   const accessToken = jwt.sign(
     { data },
@@ -24,3 +27,22 @@ export const otpExpireAfter = () => {
   currentDate.setMinutes(currentDate.getMinutes() + 10) // Add 10 minutes to current date
   return currentDate // Return the updated date
 }
+
+export const initializePushNotification = async (
+  { token, title, body }: FCMSendMessageParams
+): Promise<string | Error> => {
+  const message: Message = {
+    token: token,
+    notification: {
+      title: title,
+      body: body,
+    },
+  };
+
+  try {
+    const response = await admin.messaging().send(message);
+    return response;
+  } catch (error) {
+    return error as Error; // Typecast error to `Error`
+  }
+};

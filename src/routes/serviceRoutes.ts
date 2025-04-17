@@ -1,29 +1,48 @@
 import { Router } from 'express'
 import {
   bookService,
-  createService,
   deleteService,
   getMyService,
   getServicesByCategory,
   getUpcomingEvents,
+  upsertService,
 } from '../controllers/serviceController'
 import {
-  ADD_SERVICE,
-  BOOK_SERVICE,
+  UPSERT_SERVICE,
   DELETE_SERVICE,
+  BOOK_SERVICE,
   GET_SERVICE_PROVIDERS,
   GET_USER_SERVICES,
   UPCOMING_EVENTS,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
+import { authorization } from '../middlewares/authorization'
 
+const authorizedServiceRouter = Router()
 const serviceRouter = Router()
+
 // SERVICE ROUTES
-serviceRouter.post(ADD_SERVICE, authentication, createService)
-serviceRouter.post(GET_USER_SERVICES, authentication, getMyService)
+authorizedServiceRouter.post(
+  UPSERT_SERVICE,
+  authentication,
+  authorization,
+  upsertService,
+)
+authorizedServiceRouter.post(
+  GET_USER_SERVICES,
+  authentication,
+  authorization,
+  getMyService,
+)
+authorizedServiceRouter.delete(
+  DELETE_SERVICE,
+  authentication,
+  authorization,
+  deleteService,
+)
+
 serviceRouter.get(GET_SERVICE_PROVIDERS, authentication, getServicesByCategory)
-serviceRouter.post(DELETE_SERVICE, authentication, deleteService)
 serviceRouter.post(BOOK_SERVICE, authentication, bookService)
 serviceRouter.post(UPCOMING_EVENTS, authentication, getUpcomingEvents)
 
-export default serviceRouter
+export default {authorizedServiceRouter,serviceRouter}

@@ -24,13 +24,15 @@ export const VERIFY_EMAIL_AND_USERNAME = '/verifyUsernameAndEmail'
 export const VERIFY_PHONE = '/verifyPhone'
 export const VERIFY_OTP = '/verifyOTP'
 export const UPDATE_ROLE = '/updateRole'
-export const GET_ALL_USERS = '/getAllUsers'
-export const DELETE_ALL_USERS = '/deleteAllUsers'
 
 // SERVICE ROUTES
-export const ADD_SERVICE = '/addService'
+export const UPSERT_SERVICE = '/upsertService'
+export const UPDATE_SERVICE = '/updateService'
+
 export const GET_USER_SERVICES = '/getUserServices'
 export const GET_SERVICE_PROVIDERS = '/getServiceProviders'
 export const DELETE_SERVICE = '/deleteService'
 export const BOOK_SERVICE = '/bookService'
 export const UPCOMING_EVENTS = '/upcomingEvents'
+export const UPSERT_FCM_TOKEN ='/upsertFCMToken'
+export const FCM_TESTER = '/fcmTester'

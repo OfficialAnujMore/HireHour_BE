@@ -1,5 +1,5 @@
 import prisma from '../prisma/client'
-import { USER_PREVIEW_BODY } from '../utils/constants'
+import { CREATE_PREVIEW } from '../utils/ApiResponseConstants'
 
 // HELPER FUNCTIONS
 const verifyUserEmail = async (email: string) => {
@@ -15,7 +15,7 @@ const validateUserEmail = async (email: string) => {
     where: {
       email,
     },
-    select: USER_PREVIEW_BODY,
+    select: CREATE_PREVIEW,
   })
 }
 const validateUsername = async (username: string) => {
@@ -23,7 +23,7 @@ const validateUsername = async (username: string) => {
     where: {
       username: username,
     },
-    select: USER_PREVIEW_BODY,
+    select: CREATE_PREVIEW,
   })
 }
 
@@ -32,7 +32,7 @@ const validatePhoneNumber = async (phoneNumber: string) => {
     where: {
       phoneNumber: phoneNumber,
     },
-    select: USER_PREVIEW_BODY,
+    select: CREATE_PREVIEW,
   })
 }
 
@@ -43,7 +43,7 @@ const storeOTP = async (
   type: string,
   expireAfter: Date,
 ) => {
-  return await prisma.oTP.create({
+  return await prisma.otp.create({
     data: {
       otp,
       key,
@@ -55,7 +55,7 @@ const storeOTP = async (
 }
 
 const verifyOTP = async (key: string) => {
-  return await prisma.oTP.findFirst({
+  return await prisma.otp.findFirst({
     where: {
       key: key,
     },
@@ -65,7 +65,7 @@ const verifyOTP = async (key: string) => {
   })
 }
 const deleteVerifiedOTP = async (key: string, otp: string) => {
-  return await prisma.oTP.deleteMany({
+  return await prisma.otp.deleteMany({
     where: {
       key: key,
     },
@@ -77,7 +77,38 @@ const verifyUser = async (id: string) => {
     where: {
       AND: [{ id: id }, { isDisabled: false }, { deletedAt: null }],
     },
-    select: USER_PREVIEW_BODY,
+    select: CREATE_PREVIEW,
+  })
+}
+
+const existingService = async (id: string) => {
+  return await prisma.services.findFirst({
+    where: {
+      AND: [{ id: id }, { isDisabled: false }, { deletedAt: null }],
+    },
+  })
+}
+
+const verifyUserRole = async (id: string) => {
+  return await prisma.user.findFirst({
+    where: {
+      AND: [
+        { id: id },
+        { isDisabled: false },
+        { deletedAt: null },
+        { isServiceProvider: true },
+      ],
+    },
+    select: CREATE_PREVIEW,
+  })
+}
+
+
+const getUserFCMToken = async (id: string) => {
+  return await prisma.user.findFirst({
+    where: {
+      AND: { id: id },
+    },
   })
 }
 
@@ -89,5 +120,8 @@ export default {
   verifyUser,
   storeOTP,
   verifyOTP,
-  deleteVerifiedOTP
+  deleteVerifiedOTP,
+  existingService,
+  verifyUserRole,
+  getUserFCMToken
 }
