@@ -26,6 +26,7 @@ import {
   ValidateUsernameAndEmailBody,
 } from '../interfaces/userInterface'
 import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
+import { FCM_MESSAGE } from '../utils/fcmMessage'
 
 export const verifyEmailAndUsername = asyncHandler(
   async (req: Request<{}, {}, ValidateUsernameAndEmailBody>, res: Response) => {
@@ -207,8 +208,8 @@ export const updateUserRole = asyncHandler(
     if (fcmResponse?.fcmToken) {
       const body = {
         token: fcmResponse.fcmToken,
-        title: 'Horray, Enrolment successful',
-        body: 'Welcome to Music market place. You are successfully enrolled as a service provider',
+        title: FCM_MESSAGE.serviceProviderEnrollment.title,
+        body: FCM_MESSAGE.serviceProviderEnrollment.body,
       }
       initializePushNotification(body)
     }
@@ -328,8 +329,7 @@ export const upsertFCMToken = asyncHandler(
     const userExist = await helperService.verifyUser(userId)
     if (!userExist) {
       throw new ApiError(404, ERROR_MESSAGE.userNotFound)
-    }
-
+    }    
     const response = await userService.upsertFCMToken(userId, fcmToken)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.FCMtokenFailure)

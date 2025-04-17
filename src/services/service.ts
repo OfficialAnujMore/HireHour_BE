@@ -259,7 +259,6 @@ const upsertService = async (
   serviceData: UpsertServiceRequestBody,
   serviceId?: string, // Optional for update
 ) => {
-  console.log('Upsert data', serviceId)
 
   if (serviceId) {
     // Update existing service: delete old records first

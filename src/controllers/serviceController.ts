@@ -9,6 +9,8 @@ import {
   Service,
   UpsertServiceRequestBody,
 } from '../interfaces/serviceInterface'
+import { FCM_MESSAGE } from '../utils/fcmMessage'
+import { initializePushNotification } from '../utils/helperFunctions'
 
 /**
  * 1. Create service - Done
@@ -62,6 +64,16 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
   if (!response) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
   }
+  const fcmResponse = await helperService.getUserFCMToken(userId)
+
+  if (fcmResponse?.fcmToken) {
+    const body = {
+      token: fcmResponse.fcmToken,
+      title: FCM_MESSAGE.slotBooked.title,
+      body: FCM_MESSAGE.slotBooked.body,
+    }
+    initializePushNotification(body)
+  }
   return res
     .status(200)
     .json(new ApiResponse(200, response, SUCCESS_MESSAGE.bookingSuccessFull))
@@ -102,6 +114,21 @@ export const upsertService = asyncHandler(
       ? SUCCESS_MESSAGE.serviceUpdated
       : SUCCESS_MESSAGE.serviceCreated
 
+    if (serviceData.userId) {
+      const fcmResponse = await helperService.getUserFCMToken(
+        serviceData.userId,
+      )
+
+      if (fcmResponse?.fcmToken) {
+        const body = {
+          token: fcmResponse.fcmToken,
+          title: FCM_MESSAGE.slotCreated.body,
+          body: message,
+        }
+        initializePushNotification(body)
+      }
+    }
+
     return res
       .status(serviceId ? 200 : 201)
       .json(new ApiResponse(serviceId ? 200 : 201, response, message))
@@ -110,15 +137,12 @@ export const upsertService = asyncHandler(
 
 export const deleteService = asyncHandler(
   async (req: Request, res: Response) => {
-    const serviceId = req.query.serviceId as string | undefined 
-    console.log({serviceId});
-    
+    const serviceId = req.query.serviceId as string | undefined
+    const fcmToken = req.query.fcmToken as string | undefined
 
     if (!serviceId) {
       return res.status(400).json(new ApiError(400, 'Service ID is required'))
     }
-
-    console.log('Deleting service with ID:', serviceId)
 
     const existingService = await helperService.existingService(serviceId)
     if (!existingService) {
@@ -128,6 +152,18 @@ export const deleteService = asyncHandler(
     }
 
     await service.deleteService(serviceId)
+    console.log('Delete query params', req.query);
+    
+    if (fcmToken) {
+      
+      const body = {
+        token: fcmToken,
+        title: FCM_MESSAGE.slotDeletion.title,
+        body: FCM_MESSAGE.slotDeletion.body,
+      }
+      console.log(body);
+      initializePushNotification(body)
+    }
 
     return res
       .status(200)
