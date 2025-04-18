@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
 import service from '../services/service'
+import transaction from '../services/transactionService'
+
 import { ApiError } from '../utils/ApiError'
 import { ApiResponse } from '../utils/ApiResponse'
 import { asyncHandler } from '../utils/asyncHandler'
@@ -58,10 +60,32 @@ export const getServicesByCategory = asyncHandler(
 
 // Controller to book a service
 export const bookService = asyncHandler(async (req: Request, res: Response) => {
-  const { userId, schedule } = req.body
+  const { userId, schedule, paymentId, transactionType } = req.body
 
   const response = await service.bookService(userId, schedule)
+
+  console.log('Booked schedule response', response)
+
   if (!response) {
+    throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
+  }
+
+  // console.log({
+  //   serviceId: schedule[0].servicesId,
+  //   userId: userId,
+  //   paymentId: paymentId,
+  //   transactionType: transactionType,
+  // });
+  
+  const transactionResponse =  await transaction.createPaymentTransaction({
+    serviceId: schedule[0].servicesId,
+    userId: userId,
+    paymentId: paymentId,
+    transactionType: transactionType,
+  })
+
+
+  if (!transactionResponse) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
   }
   const fcmResponse = await helperService.getUserFCMToken(userId)
@@ -74,6 +98,7 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
     }
     initializePushNotification(body)
   }
+
   return res
     .status(200)
     .json(new ApiResponse(200, response, SUCCESS_MESSAGE.bookingSuccessFull))
@@ -151,9 +176,8 @@ export const deleteService = asyncHandler(
         .json(new ApiError(404, ERROR_MESSAGE.serviceNotFound))
     }
 
-    await service.deleteService(serviceId)    
+    await service.deleteService(serviceId)
     if (fcmToken) {
-      
       const body = {
         token: fcmToken,
         title: FCM_MESSAGE.slotDeletion.title,

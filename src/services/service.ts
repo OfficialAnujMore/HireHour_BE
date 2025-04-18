@@ -100,6 +100,7 @@ const getServicesByCategory = async (
 
   })
 
+
   // Shape the result to match the desired structure
   return services.map((service) => ({
     userId: service.user.id,
