@@ -6,11 +6,15 @@ import routes from './routes/userRoutes'
 import {
   V1_AUTH_BASE_ROUTE,
   V1_SERVICE_BASE_ROUTE,
+  V1_TRANSACTION_BASE_ROUTE,
   V1_USER_BASE_ROUTE,
 } from './routes/constants'
 import { ApiError } from './utils/ApiError'
+import transactionRoutes from './routes/transactionRoutes'
 const { authRouter, userRouter } = routes
 const { authorizedServiceRouter, serviceRouter } = serviceRoutes
+const { transactionRouter } = transactionRoutes
+
 
 
 const app = express()
@@ -33,6 +37,8 @@ app.use(V1_AUTH_BASE_ROUTE, authRouter)
 app.use(V1_USER_BASE_ROUTE, userRouter)
 app.use(V1_SERVICE_BASE_ROUTE, authorizedServiceRouter)
 app.use(V1_SERVICE_BASE_ROUTE, serviceRouter)
+app.use(V1_TRANSACTION_BASE_ROUTE, transactionRouter)
+
 
 app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
   console.error('Error caught in middleware:', err) // Debugging

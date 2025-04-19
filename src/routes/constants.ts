@@ -2,6 +2,8 @@
 export const V1_AUTH_BASE_ROUTE = '/api/v1/auth'
 export const V1_USER_BASE_ROUTE = '/api/v1/user'
 export const V1_SERVICE_BASE_ROUTE = '/api/v1/service'
+export const V1_TRANSACTION_BASE_ROUTE = '/api/v1/transaction'
+
 
 // USER ROUTES
 
@@ -36,3 +38,7 @@ export const BOOK_SERVICE = '/bookService'
 export const UPCOMING_EVENTS = '/upcomingEvents'
 export const UPSERT_FCM_TOKEN ='/upsertFCMToken'
 export const FCM_TESTER = '/fcmTester'
+
+// TRANSACTION ROUTES
+export const GET_USER_TRANSACTION = '/getUserTransaction'
+

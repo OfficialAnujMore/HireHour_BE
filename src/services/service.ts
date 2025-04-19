@@ -100,8 +100,6 @@ const getServicesByCategory = async (
 
   })
 
-  console.log(services);
-  
 
   // Shape the result to match the desired structure
   return services.map((service) => ({
@@ -259,7 +257,6 @@ const upsertService = async (
   serviceData: UpsertServiceRequestBody,
   serviceId?: string, // Optional for update
 ) => {
-  console.log('Upsert data', serviceId)
 
   if (serviceId) {
     // Update existing service: delete old records first

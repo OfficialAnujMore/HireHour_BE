@@ -48,6 +48,7 @@ model services {
   isDisabled     Boolean          @default(false)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  transaction    transaction[]
 }
 
 model servicePreview {
@@ -74,6 +75,19 @@ model otp {
   field       String
   type        String
   expireAfter DateTime
+}
+
+model transaction {
+  id              String   @id @default(uuid())
+  serviceId       String
+  userId          String
+  paymentId       String
+  transactionType String
+  status          String   @default("pending")
+  amount          Float    @default(0.0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  service            services @relation(fields: [serviceId], references: [id])
 }
 
 model baseConfiguration {
