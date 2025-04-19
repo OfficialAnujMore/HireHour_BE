@@ -103,13 +103,38 @@ const verifyUserRole = async (id: string) => {
   })
 }
 
-
 const getUserFCMToken = async (id: string) => {
   return await prisma.user.findFirst({
     where: {
       AND: { id: id },
     },
   })
+}
+
+const verifyScheduleAvailability = async (
+  schedule: {
+    id: string
+    servicesId: string
+    date: string
+    selected: boolean
+    isAvailable: boolean
+  }[],
+) => {
+  const responsePromise = schedule.map((scheduleItem) =>
+    prisma.schedule.findMany({
+      where: {
+        AND: [
+          { id: scheduleItem.id },
+          {
+            isAvailable: false,
+          },
+        ],
+      },
+    }),
+  )
+  const nestedResult = await Promise.all(responsePromise)
+  const flatResult = nestedResult.flat() // flatten the arrays
+  return flatResult;
 }
 
 export default {
@@ -123,5 +148,6 @@ export default {
   deleteVerifiedOTP,
   existingService,
   verifyUserRole,
-  getUserFCMToken
+  getUserFCMToken,
+  verifyScheduleAvailability,
 }
