@@ -38,7 +38,7 @@ export const releaseExpiredOTP = async () => {
   console.log(`[CRON] Released expired OTPs at ${now.toISOString()}`) }
 
 // Run every 5 minutes
-cron.schedule('*/1 * * * *', () => {
+cron.schedule('*/5 * * * *', () => {
   releaseExpiredHoldSlots()
   releaseExpiredOTP()
 })
