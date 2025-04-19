@@ -346,6 +346,30 @@ const getServiceById = async (id: string) => {
   })
 }
 
+const holdSchedule = async (
+  schedule: {
+    id: string
+    servicesId: string
+    date: string
+    selected: boolean
+    isAvailable: boolean
+  }[],
+) => {
+  const  holdDurationInMinutes = 15
+  const holdUntilTime = new Date(Date.now() + holdDurationInMinutes * 60 * 1000)
+
+  const updatePromises = schedule.map((scheduleItem) =>
+    prisma.schedule.update({
+      where: { id: scheduleItem.id },
+      data: {
+        isAvailable: scheduleItem.isAvailable,
+        holdExpiresAt: holdUntilTime,
+      },
+    }),
+  )
+  return await Promise.all(updatePromises)
+}
+
 export default {
   getMyService,
   getServicesByCategory,
@@ -354,4 +378,5 @@ export default {
   upsertService,
   deleteService,
   getServiceById,
+  holdSchedule
 }

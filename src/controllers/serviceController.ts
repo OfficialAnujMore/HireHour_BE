@@ -69,21 +69,12 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
   if (!response) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
   }
-
-  // console.log({
-  //   serviceId: schedule[0].servicesId,
-  //   userId: userId,
-  //   paymentId: paymentId,
-  //   transactionType: transactionType,
-  // });
-  
-  const transactionResponse =  await transaction.createPaymentTransaction({
+  const transactionResponse = await transaction.createPaymentTransaction({
     serviceId: schedule[0].servicesId,
     userId: userId,
     paymentId: paymentId,
     transactionType: transactionType,
   })
-
 
   if (!transactionResponse) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
@@ -204,5 +195,34 @@ export const getMyService = asyncHandler(
       .json(
         new ApiResponse(200, response, 'User services retrieved successfully'),
       )
+  },
+)
+
+// Controller to hold a schedule for
+export const holdSchedule = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { schedule } = req.body
+    const holdVerification =
+      await helperService.verifyScheduleAvailability(schedule)
+
+    if (holdVerification.length > 0) {
+      return res
+        .status(409)
+        .json(
+          new ApiResponse(
+            409,
+            holdVerification,
+            'Some slots are already been reserved',
+          ),
+        )
+    }
+    const response = await service.holdSchedule(schedule)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, response, SUCCESS_MESSAGE.bookingSuccessFull))
   },
 )

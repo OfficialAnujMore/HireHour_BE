@@ -66,6 +66,7 @@ model schedule {
   servicesId   String?
   bookedUser   user?     @relation(fields: [bookedUserId], references: [id])
   bookedUserId String?
+  holdExpiresAt    DateTime?
 }
 
 model otp {
@@ -87,7 +88,7 @@ model transaction {
   amount          Float    @default(0.0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  service            services @relation(fields: [serviceId], references: [id])
+  service         services @relation(fields: [serviceId], references: [id])
 }
 
 model baseConfiguration {

@@ -11,6 +11,7 @@ import {
 } from './routes/constants'
 import { ApiError } from './utils/ApiError'
 import transactionRoutes from './routes/transactionRoutes'
+import './cron-jobs/index'
 const { authRouter, userRouter } = routes
 const { authorizedServiceRouter, serviceRouter } = serviceRoutes
 const { transactionRouter } = transactionRoutes
