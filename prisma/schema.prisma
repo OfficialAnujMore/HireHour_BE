@@ -59,14 +59,14 @@ model servicePreview {
 }
 
 model schedule {
-  id           String    @id @default(uuid())
-  date         String
-  isAvailable  Boolean
-  services     services? @relation(fields: [servicesId], references: [id])
-  servicesId   String?
-  bookedUser   user?     @relation(fields: [bookedUserId], references: [id])
-  bookedUserId String?
-  holdExpiresAt    DateTime?
+  id            String    @id @default(uuid())
+  date          String
+  isAvailable   Boolean
+  services      services? @relation(fields: [servicesId], references: [id])
+  servicesId    String?
+  bookedUser    user?     @relation(fields: [bookedUserId], references: [id])
+  bookedUserId  String?
+  holdExpiresAt DateTime?
 }
 
 model otp {
