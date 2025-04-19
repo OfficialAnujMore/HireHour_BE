@@ -26,11 +26,19 @@ export const releaseExpiredHoldSlots = async () => {
   console.log(`[CRON] Released expired holds at ${now.toISOString()}`)
 }
 
+export const releaseExpiredOTP = async () => {
+  const now = new Date()
+  await prisma.otp.deleteMany({
+    where: {
+      expireAfter: {
+        lt: now, // holdUntil < now
+      },
+    },
+  })
+  console.log(`[CRON] Released expired OTPs at ${now.toISOString()}`) }
 
 // Run every 5 minutes
-cron.schedule('*/5 * * * *', () => {
-    releaseExpiredHoldSlots()
+cron.schedule('*/1 * * * *', () => {
+  releaseExpiredHoldSlots()
+  releaseExpiredOTP()
 })
-
-
-  
