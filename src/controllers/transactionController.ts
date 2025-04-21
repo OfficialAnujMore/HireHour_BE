@@ -12,9 +12,7 @@ export const getMyTransactions = asyncHandler(
     const response = await transaction.getMyTransactions(req.body.userId)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)
-    }
-    console.log(response);
-    
+    }    
     return res
       .status(200)
       .json(

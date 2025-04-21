@@ -63,9 +63,6 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
   const { userId, schedule, paymentId, transactionType } = req.body
 
   const response = await service.bookService(userId, schedule)
-
-  console.log('Booked schedule response', response)
-
   if (!response) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
   }

@@ -266,7 +266,6 @@ const upsertService = async (
     await prisma.schedule.deleteMany({
       where: { servicesId: serviceId },
     })
-    console.log('Both service preview and schedule deletedß')
   }
 
   // Prepare service payload
