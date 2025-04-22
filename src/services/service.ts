@@ -1,6 +1,5 @@
 import prisma from '../prisma/client'
 import {
-  Service,
   UpsertServiceRequestBody,
 } from '../interfaces/serviceInterface'
 
@@ -192,20 +191,20 @@ const getUpcomingEvents = async (userId: string) => {
   bookedSchedules.forEach((schedule) => {
     const service = schedule.services
     if (service) {
-      const existingService = uniqueServicesMap.get(service.id)
+      const verifyExistingService = uniqueServicesMap.get(service.id)
 
       // If the service already exists in the map, merge the schedules
-      if (existingService) {
+      if (verifyExistingService) {
         // Filter out duplicate schedules based on schedule.id
         const newSchedules = (service?.schedule || []).filter(
           (sched) =>
-            !existingService.schedule.some(
+            !verifyExistingService.schedule.some(
               (existingSched: any) => existingSched.id === sched.id,
             ),
         )
 
-        existingService.schedule = [
-          ...existingService.schedule,
+        verifyExistingService.schedule = [
+          ...verifyExistingService.schedule,
           ...newSchedules.map((sched) => ({
             id: sched.id,
             date: sched.date,

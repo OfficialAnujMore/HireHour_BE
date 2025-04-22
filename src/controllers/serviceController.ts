@@ -157,8 +157,8 @@ export const deleteService = asyncHandler(
       return res.status(400).json(new ApiError(400, 'Service ID is required'))
     }
 
-    const existingService = await helperService.existingService(serviceId)
-    if (!existingService) {
+    const verifyExistingService = await helperService.verifyExistingService(serviceId)
+    if (!verifyExistingService) {
       return res
         .status(404)
         .json(new ApiError(404, ERROR_MESSAGE.serviceNotFound))

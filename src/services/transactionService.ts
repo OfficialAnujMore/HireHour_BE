@@ -1,5 +1,4 @@
 import prisma from '../prisma/client'
-import service from './service'
 
 const createPaymentTransaction = async (data: any) => {
   return await prisma.transaction.create({

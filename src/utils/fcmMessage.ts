@@ -1,19 +1,18 @@
 export const FCM_MESSAGE = {
   serviceProviderEnrollment: {
-    title: 'Horray, Enrolment successful',
-    body: 'Welcome to Music market place. You are successfully enrolled as a service provider',
+    title: 'Hooray! Enrollment Successful 🎉',
+    body: 'Welcome to the Music Marketplace! You are now enrolled as a service provider.',
   },
   slotBooked: {
-    title: 'Slot booked successfully',
-    body: 'Your slot has been booked',
+    title: 'Slot Booked Successfully ✅',
+    body: 'Your slot has been booked. We’re excited to see you perform!',
   },
-
   slotCreated: {
-    title: 'Slot created successfully',
-    body: 'Congrtulations!',
+    title: 'Slot Created 🎯',
+    body: 'Congratulations! Your performance slot is now live.',
   },
   slotDeletion: {
-    title: 'Deleted',
-    body: ':(',
+    title: 'Slot Deleted ❌',
+    body: 'Your slot has been removed. Hope to see you again soon!',
   },
 }
