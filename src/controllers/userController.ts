@@ -27,10 +27,11 @@ import {
 } from '../interfaces/userInterface'
 import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 import { FCM_MESSAGE } from '../utils/fcmMessage'
+import { sendTemplatedEmail } from '../utils/emailService'
 
 export const verifyEmailAndUsername = asyncHandler(
   async (req: Request<{}, {}, ValidateUsernameAndEmailBody>, res: Response) => {
-    const { username, email, password } = req.body
+    const { firstName, username, email, password } = req.body
 
     if (!EMAIL_REGEX.test(email)) {
       throw new ApiError(400, ERROR_MESSAGE.invalidEmail)
@@ -66,6 +67,16 @@ export const verifyEmailAndUsername = asyncHandler(
     if (!storePhoneOTPResponse) {
       throw new ApiError(500, ERROR_MESSAGE.otpGenerationFailed)
     }
+
+    await sendTemplatedEmail({
+      to: email,
+      templateId: process.env.OTP_VERIFICATION_TEMPLATE_ID || "", // Replace with your actual template ID
+      dynamicTemplateData: {
+        name: firstName,
+        otp: emailOTP,
+        year: new Date().getFullYear(),
+      },
+    })
 
     return res
       .status(200)
@@ -329,7 +340,7 @@ export const upsertFCMToken = asyncHandler(
     const userExist = await helperService.verifyExistingUser(userId)
     if (!userExist) {
       throw new ApiError(404, ERROR_MESSAGE.userNotFound)
-    }    
+    }
     const response = await userService.upsertFCMToken(userId, fcmToken)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.fcmTokenFailure)
