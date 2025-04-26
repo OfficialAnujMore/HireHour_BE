@@ -90,6 +90,7 @@ const getServicesByCategory = async (
       schedule: {
         where: {
           isAvailable: true,
+          holdExpiresAt: null,
         },
       }, // Fetching schedule directly since timeSlots are removed
     },
@@ -143,7 +144,8 @@ const bookService = async (
       where: { id: scheduleItem.id },
       data: {
         bookedUserId: userId,
-        isAvailable: scheduleItem.isAvailable,
+        isAvailable: false,
+        holdExpiresAt:null
       },
     }),
   )
@@ -354,7 +356,7 @@ const holdSchedule = async (
     prisma.schedule.update({
       where: { id: scheduleItem.id },
       data: {
-        isAvailable: scheduleItem.isAvailable,
+        isAvailable: false,
         holdExpiresAt: holdUntilTime,
       },
     }),
@@ -375,15 +377,13 @@ const handleSlotApproval = async (slotDetails: any) => {
     baseUpdate.isApproved = slotDetails.isApproved
   }
 
-  console.log(slotDetails);
-  
+  console.log(slotDetails)
 
   return prisma.schedule.update({
     where: { id: slotDetails.id },
     data: baseUpdate,
   })
 }
-
 
 const getMyBookedService = async ({
   id,

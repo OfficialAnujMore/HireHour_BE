@@ -16,7 +16,6 @@ export const releaseExpiredHoldSlots = async () => {
       holdExpiresAt: {
         lt: now, // holdUntil < now
       },
-      isAvailable: false,
     },
     data: {
       isAvailable: true,
