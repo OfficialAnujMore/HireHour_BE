@@ -60,7 +60,7 @@ export const deleteOldSchedules = async () => {
 }
 
 // Run every 5 minutes
-cron.schedule('*/1 * * * *', () => {
+cron.schedule('*/5 * * * *', () => {
   releaseExpiredHoldSlots()
   releaseExpiredOTP()
   // deleteOldSchedules()

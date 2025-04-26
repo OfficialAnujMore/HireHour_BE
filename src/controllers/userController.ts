@@ -70,7 +70,7 @@ export const verifyEmailAndUsername = asyncHandler(
 
     await sendTemplatedEmail({
       to: email,
-      templateId: process.env.OTP_VERIFICATION_TEMPLATE_ID || "", // Replace with your actual template ID
+      templateId: process.env.OTP_VERIFICATION_TEMPLATE_ID || '', // Replace with your actual template ID
       dynamicTemplateData: {
         name: firstName,
         otp: emailOTP,
@@ -156,6 +156,15 @@ export const registerUser = asyncHandler(
     if (!user) {
       throw new ApiError(500, ERROR_MESSAGE.registrationFailure)
     }
+
+    await sendTemplatedEmail({
+      to: data.email,
+      templateId: process.env.WELCOME_TEMPLATE_ID || '', // Replace with your actual template ID
+      dynamicTemplateData: {
+        name: data.firstName,
+        year: new Date().getFullYear(),
+      },
+    })
 
     return res
       .status(201)

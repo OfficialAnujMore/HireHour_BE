@@ -66,7 +66,9 @@ model schedule {
   servicesId    String?
   bookedUser    user?     @relation(fields: [bookedUserId], references: [id])
   bookedUserId  String?
+  isApproved    Boolean   @default(false)
   holdExpiresAt DateTime?
+  // venue         String
 }
 
 model otp {

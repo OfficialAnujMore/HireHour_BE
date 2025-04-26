@@ -35,7 +35,11 @@ export const GET_USER_SERVICES = '/getUserServices'
 export const GET_SERVICE_PROVIDERS = '/getServiceProviders'
 export const DELETE_SERVICE = '/deleteService'
 export const BOOK_SERVICE = '/bookService'
-export const HOLD_SERVICE = '/holdSlots'
+export const HOLD_SLOTS = '/holdSlots'
+export const APPROVE_SLOTS = '/approveSlots'
+export const GET_BOOKED_SERVICES = '/getBookedService'
+
+
 
 export const UPCOMING_EVENTS = '/upcomingEvents'
 export const UPSERT_FCM_TOKEN ='/upsertFCMToken'

@@ -40,6 +40,8 @@ export const ERROR_MESSAGE = {
   otpVerifcationFailed: 'OTP verification failed. Please try again.',
   serviceFailure: 'Failed to create service.',
   errorInService: 'Unable to retrieve service details.',
+  errorInSlotApproval: 'Unable to approve slot',
+
   bookingFailure: 'Failed to book slot. Please try again.',
   invalidCategory: 'Selected category is invalid.',
   invalidData: 'Submitted data is invalid.',

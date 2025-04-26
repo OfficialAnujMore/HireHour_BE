@@ -157,7 +157,8 @@ export const deleteService = asyncHandler(
       return res.status(400).json(new ApiError(400, 'Service ID is required'))
     }
 
-    const verifyExistingService = await helperService.verifyExistingService(serviceId)
+    const verifyExistingService =
+      await helperService.verifyExistingService(serviceId)
     if (!verifyExistingService) {
       return res
         .status(404)
@@ -221,5 +222,38 @@ export const holdSchedule = asyncHandler(
     return res
       .status(200)
       .json(new ApiResponse(200, response, SUCCESS_MESSAGE.bookingSuccessFull))
+  },
+)
+
+export const handleSlotApproval = asyncHandler(
+  async (req: Request, res: Response) => {    
+    const response = await service.handleSlotApproval(req.body)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInSlotApproval)
+    }
+    return res.status(200).json(new ApiResponse(200, response, 'Slot approved'))
+  },
+)
+
+// Controller to get all the services created by a service provider
+export const getMyBookedService = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id, isAvailable } = req.body
+    const response = await service.getMyBookedService({
+      id: id,
+      isAvailable: isAvailable,
+    })
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInService)
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          response,
+          'User booked services retrieved successfully',
+        ),
+      )
   },
 )
