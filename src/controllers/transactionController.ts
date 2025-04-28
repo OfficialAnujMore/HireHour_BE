@@ -9,7 +9,9 @@ import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 // Controller to get all the user transaction
 export const getMyTransactions = asyncHandler(
   async (req: Request, res: Response) => {
-    const response = await transaction.getMyTransactions(req.body.userId)
+    const {userId} =req.body
+    
+    const response = await transaction.getMyTransactions(userId)    
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)
     }    

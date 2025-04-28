@@ -1,7 +1,5 @@
 import prisma from '../prisma/client'
-import {
-  UpsertServiceRequestBody,
-} from '../interfaces/serviceInterface'
+import { UpsertServiceRequestBody } from '../interfaces/serviceInterface'
 
 const getMyService = async (id?: string) => {
   const services = await prisma.services.findMany({
@@ -28,7 +26,6 @@ const getMyService = async (id?: string) => {
     },
   })
 
-  // Shape the result to match the desired structure
   return services.map((service) => ({
     userId: service.user.id,
     name: `${service.user.firstName} ${service.user.lastName}`,
@@ -93,12 +90,11 @@ const getServicesByCategory = async (
       schedule: {
         where: {
           isAvailable: true,
-        }
+          holdExpiresAt: null,
+        },
       }, // Fetching schedule directly since timeSlots are removed
     },
-
   })
-
 
   // Shape the result to match the desired structure
   return services.map((service) => ({
@@ -135,23 +131,38 @@ const getServicesByCategory = async (
 
 const bookService = async (
   userId: string,
-  schedule: {
-    id: string
-    servicesId: string
-    date: string
-    selected: boolean
-    isAvailable: boolean
+  cartItems: {
+    schedule: {
+      id: string
+      servicesId: string
+      date: string
+      selected: boolean
+    }[]
   }[],
 ) => {
-  const updatePromises = schedule.map((scheduleItem) =>
-    prisma.schedule.update({
-      where: { id: scheduleItem.id },
-      data: {
-        bookedUserId: userId,
-        isAvailable: scheduleItem.isAvailable,
-      },
-    }),
-  )
+  const updatePromises: any[] = []
+
+  cartItems.forEach((cartItem) => {
+    cartItem.schedule.forEach((scheduleItem) => {
+      updatePromises.push(
+        prisma.schedule.update({
+          where: { id: scheduleItem.id },
+          data: {
+            bookedUserId: userId,
+            isAvailable: false,
+            holdExpiresAt: null,
+            // venue: cartItem.venue,
+            // url: cartItem.meetingUrl,
+            // address: cartItem.addressInfo.address,
+            // city: cartItem.addressInfo.city,
+            // postalCode: cartItem.addressInfo.postalCode,
+            // state: cartItem.addressInfo.state,
+            // country: cartItem.addressInfo.country,
+          },
+        }),
+      )
+    })
+  })
 
   const res = await Promise.all(updatePromises)
 
@@ -256,7 +267,6 @@ const upsertService = async (
   serviceData: UpsertServiceRequestBody,
   serviceId?: string, // Optional for update
 ) => {
-
   if (serviceId) {
     // Update existing service: delete old records first
     await prisma.servicePreview.deleteMany({
@@ -353,19 +363,81 @@ const holdSchedule = async (
     isAvailable: boolean
   }[],
 ) => {
-  const  holdDurationInMinutes = 15
+  const holdDurationInMinutes = 15
   const holdUntilTime = new Date(Date.now() + holdDurationInMinutes * 60 * 1000)
 
   const updatePromises = schedule.map((scheduleItem) =>
     prisma.schedule.update({
       where: { id: scheduleItem.id },
       data: {
-        isAvailable: scheduleItem.isAvailable,
+        isAvailable: false,
         holdExpiresAt: holdUntilTime,
       },
     }),
   )
   return await Promise.all(updatePromises)
+}
+
+const handleSlotApproval = async (slotDetails: any) => {
+  const baseUpdate: any = {
+    isApproved: slotDetails.isApproved,
+  }
+
+  if (!slotDetails.isApproved) {
+    baseUpdate.isAvailable = true
+    baseUpdate.bookedUserId = null
+  } else {
+    baseUpdate.isAvailable = slotDetails.isAvailable
+    baseUpdate.isApproved = slotDetails.isApproved
+  }
+
+  console.log(slotDetails)
+
+  return prisma.schedule.update({
+    where: { id: slotDetails.id },
+    data: baseUpdate,
+  })
+}
+
+const getMyBookedService = async ({
+  id,
+  isAvailable,
+}: {
+  id: string
+  isAvailable: boolean
+}) => {
+  const bookedSchedules = await prisma.schedule.findMany({
+    where: {
+      isAvailable,
+      bookedUserId: {
+        not: null, // ✅ Only fetch schedules that have a booked user
+      },
+      services: {
+        userId: id,
+        deletedAt: null,
+        isDisabled: false,
+      },
+    },
+    include: {
+      bookedUser: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          phoneNumber: true,
+          avatarUri: true,
+        },
+      },
+      services: {
+        include: {
+          servicePreview: true,
+        },
+      },
+    },
+  })
+
+  return bookedSchedules
 }
 
 export default {
@@ -376,5 +448,7 @@ export default {
   upsertService,
   deleteService,
   getServiceById,
-  holdSchedule
+  holdSchedule,
+  handleSlotApproval,
+  getMyBookedService,
 }

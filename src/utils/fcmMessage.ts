@@ -9,7 +9,7 @@ export const FCM_MESSAGE = {
   },
   slotCreated: {
     title: 'Slot Created 🎯',
-    body: 'Congratulations! Your performance slot is now live.',
+    body: 'Congratulations! Your slot is now live.',
   },
   slotDeletion: {
     title: 'Slot Deleted ❌',
