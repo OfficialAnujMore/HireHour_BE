@@ -131,24 +131,38 @@ const getServicesByCategory = async (
 
 const bookService = async (
   userId: string,
-  schedule: {
-    id: string
-    servicesId: string
-    date: string
-    selected: boolean
-    isAvailable: boolean
+  cartItems: {
+    schedule: {
+      id: string
+      servicesId: string
+      date: string
+      selected: boolean
+    }[]
   }[],
 ) => {
-  const updatePromises = schedule.map((scheduleItem) =>
-    prisma.schedule.update({
-      where: { id: scheduleItem.id },
-      data: {
-        bookedUserId: userId,
-        isAvailable: false,
-        holdExpiresAt:null
-      },
-    }),
-  )
+  const updatePromises: any[] = []
+
+  cartItems.forEach((cartItem) => {
+    cartItem.schedule.forEach((scheduleItem) => {
+      updatePromises.push(
+        prisma.schedule.update({
+          where: { id: scheduleItem.id },
+          data: {
+            bookedUserId: userId,
+            isAvailable: false,
+            holdExpiresAt: null,
+            // venue: cartItem.venue,
+            // url: cartItem.meetingUrl,
+            // address: cartItem.addressInfo.address,
+            // city: cartItem.addressInfo.city,
+            // postalCode: cartItem.addressInfo.postalCode,
+            // state: cartItem.addressInfo.state,
+            // country: cartItem.addressInfo.country,
+          },
+        }),
+      )
+    })
+  })
 
   const res = await Promise.all(updatePromises)
 
