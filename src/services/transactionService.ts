@@ -1,18 +1,17 @@
 import prisma from '../prisma/client'
 
 const getMyTransactions = async (userId: string) => {
-  // const transaction = await prisma.transaction.findMany({
-  //   where: {
-  //     userId: userId,
-  //   },
-  //   include: {
-  //     service: true,
-  //   },
-  // })
-
-  // // Shape the result to match the desired structure
-  // return transaction
-  return
+  return await prisma.transaction.findMany({
+    where: {
+      userId: userId,
+    },
+    include: {
+      transactionItems: true, // Assuming you have a service relation
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  })
 }
 
 const storeTransaction = async (
@@ -27,13 +26,8 @@ const storeTransaction = async (
     paymentStatus: string
   },
 ) => {
-  const {
-    tax,
-    totalAmount,
-    transactionType,
-    paymentId,
-    paymentStatus,
-  } = paymentDetails
+  const { tax, totalAmount, transactionType, paymentId, paymentStatus } =
+    paymentDetails
 
   const transaction = await prisma.transaction.create({
     data: {
