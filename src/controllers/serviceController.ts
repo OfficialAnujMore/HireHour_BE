@@ -233,10 +233,23 @@ export const holdSchedule = asyncHandler(
 
 export const handleSlotApproval = asyncHandler(
   async (req: Request, res: Response) => {
+    const { date, isApproved, bookedUser, services } = req.body
+    const { firstName, lastName } = services.user
     const response = await service.handleSlotApproval(req.body)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInSlotApproval)
     }
+
+    const fcmResponse = await helperService.getUserFCMToken(bookedUser.id)
+    if (fcmResponse?.fcmToken) {
+      const body = {
+        token: fcmResponse.fcmToken,
+        title: `Slot request ${isApproved ? 'Approved' : 'Rejected'} for ${date}`,
+        body: `${isApproved ? 'Approved' : 'Rejected'}  by ${firstName} ${lastName}`,
+      }
+      initializePushNotification(body)
+    }
+
     return res.status(200).json(new ApiResponse(200, response, 'Slot approved'))
   },
 )

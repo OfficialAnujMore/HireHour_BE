@@ -432,6 +432,12 @@ const getMyBookedService = async ({
       services: {
         include: {
           servicePreview: true,
+          user: {
+            select:{
+              firstName:true,
+              lastName:true
+            }
+          },
         },
       },
     },
