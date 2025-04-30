@@ -102,7 +102,7 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
 export const getUpcomingEvents = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId } = req.body
-    const response = await service.getUpcomingEvents(userId)
+    const response = await service.getAllScheduledEvents(userId,true, true, new Date())
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)
     }
