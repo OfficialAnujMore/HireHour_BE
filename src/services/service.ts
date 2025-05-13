@@ -216,22 +216,13 @@ const getAllScheduledEvents = async (
         },
       },
     },
-   
+
     orderBy: {
       date: 'asc', // Assuming "date" field is used to schedule
     },
   })
-  console.log(allSchedules)
 
-  // Separate upcoming and past
-  // const upcomingEvents = allSchedules.filter(
-  //   (schedule) => new Date(schedule.date) > now,
-  // )
-  // const pastEvents = allSchedules.filter(
-  //   (schedule) => new Date(schedule.date) <= now,
-  // )
-
-  return allSchedules;
+  return allSchedules
 }
 
 const upsertService = async (
@@ -372,14 +363,27 @@ const handleSlotApproval = async (slotDetails: any) => {
 
 const getMyBookedService = async ({
   id,
-  isAvailable,
+  type,
 }: {
   id: string
-  isAvailable: boolean
+  type: string
 }) => {
+  const currentDate = new Date()
+  let dateFilter
+  let isApproved = true
+  currentDate.setUTCHours(0, 0, 0, 0)
+  if (type === 'Upcoming') {
+    dateFilter = { gte: currentDate }
+  } else if (type === 'Past') {
+    dateFilter = { lt: currentDate }
+  } else {
+    dateFilter = { gte: currentDate }
+    isApproved = false
+  }
   const bookedSchedules = await prisma.schedule.findMany({
     where: {
-      isAvailable,
+      isApproved,
+      date: dateFilter,
       bookedUserId: {
         not: null, // ✅ Only fetch schedules that have a booked user
       },
