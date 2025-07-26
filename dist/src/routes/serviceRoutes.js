@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const serviceController_1 = require("../controllers/serviceController");
+const constants_1 = require("./constants");
+const authentication_1 = require("../middlewares/authentication");
+const authorization_1 = require("../middlewares/authorization");
+const authorizedServiceRouter = (0, express_1.Router)();
+const serviceRouter = (0, express_1.Router)();
+// SERVICE ROUTES
+authorizedServiceRouter.post(constants_1.UPSERT_SERVICE, authentication_1.authentication, authorization_1.authorization, serviceController_1.upsertService);
+authorizedServiceRouter.post(constants_1.GET_USER_SERVICES, authentication_1.authentication, authorization_1.authorization, serviceController_1.getMyService);
+authorizedServiceRouter.post(constants_1.APPROVE_SLOTS, authentication_1.authentication, authorization_1.authorization, serviceController_1.handleSlotApproval);
+authorizedServiceRouter.post(constants_1.GET_BOOKED_SERVICES, authentication_1.authentication, authorization_1.authorization, serviceController_1.getMyBookedService);
+authorizedServiceRouter.delete(constants_1.DELETE_SERVICE, authentication_1.authentication, authorization_1.authorization, serviceController_1.deleteService);
+serviceRouter.get(constants_1.GET_SERVICE_PROVIDERS, authentication_1.authentication, serviceController_1.getServicesByCategory);
+serviceRouter.post(constants_1.BOOK_SERVICE, authentication_1.authentication, serviceController_1.bookService);
+serviceRouter.post(constants_1.HOLD_SLOTS, authentication_1.authentication, serviceController_1.holdSchedule);
+serviceRouter.post(constants_1.UPCOMING_EVENTS, authentication_1.authentication, serviceController_1.getUpcomingEvents);
+exports.default = { authorizedServiceRouter, serviceRouter };

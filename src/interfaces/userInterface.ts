@@ -1,3 +1,5 @@
+import { Schedule } from './serviceInterface'
+
 interface User {
   id: string
   firstName: string
