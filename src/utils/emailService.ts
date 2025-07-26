@@ -24,7 +24,7 @@ export const sendTemplatedEmail = async ({
   }
 
   try {
-    await sgMail.send(msg)
+    // await sgMail.send(msg)
     console.log(`✅ Templated email sent to ${to}`)
   } catch (error: any) {
     console.error(

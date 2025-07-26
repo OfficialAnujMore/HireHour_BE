@@ -1,0 +1,36 @@
+services:
+  - type: web
+    name: hirehour-backend
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: ACCESS_TOKEN_SECRET
+        sync: false
+      - key: REFRESH_TOKEN_SECRET
+        sync: false
+      - key: ACCESS_TOKEN_EXPIRY
+        value: "15m"
+      - key: REFRESH_TOKEN_EXPIRY
+        value: "7d"
+      - key: SENDGRID_API_KEY
+        sync: false
+      - key: OTP_VERIFICATION_TEMPLATE_ID
+        sync: false
+      - key: WELCOME_TEMPLATE_ID
+        sync: false
+      - key: DOMAIN
+        sync: false
+      - key: FIREBASE_PROJECT_ID
+        sync: false
+      - key: FIREBASE_PRIVATE_KEY
+        sync: false
+      - key: FIREBASE_CLIENT_EMAIL
+        sync: false
+      - key: CORS_ORIGIN
+        sync: false 

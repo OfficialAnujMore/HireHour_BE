@@ -34,15 +34,6 @@ app.use(express.static('public'))
 app.use(cookieParser())
 app.use(express.json())
 
-// Health check endpoint
-app.get('/health', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime()
-  })
-})
-
 app.use(V1_AUTH_BASE_ROUTE, authRouter)
 app.use(V1_USER_BASE_ROUTE, userRouter)
 app.use(V1_SERVICE_BASE_ROUTE, authorizedServiceRouter)
