@@ -12,7 +12,7 @@ import {
   UpsertServiceRequestBody,
 } from '../interfaces/serviceInterface'
 import { FCM_MESSAGE } from '../utils/fcmMessage'
-import { initializePushNotification } from '../utils/helperFunctions'
+import { formatDateUS, initializePushNotification } from '../utils/helperFunctions'
 
 /**
  * 1. Create service - Done
@@ -102,7 +102,13 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
 export const getUpcomingEvents = asyncHandler(
   async (req: Request, res: Response) => {
     const { userId } = req.body
-    const response = await service.getUpcomingEvents(userId)
+    const response = await service.getAllScheduledEvents(
+      userId,
+      true,
+      true,
+      new Date(),
+    )
+    
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)
     }
@@ -233,10 +239,23 @@ export const holdSchedule = asyncHandler(
 
 export const handleSlotApproval = asyncHandler(
   async (req: Request, res: Response) => {
+    const { date, isApproved, bookedUser, services } = req.body
+    const { firstName, lastName } = services.user
     const response = await service.handleSlotApproval(req.body)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInSlotApproval)
     }
+
+    const fcmResponse = await helperService.getUserFCMToken(bookedUser.id)
+    if (fcmResponse?.fcmToken) {
+      const body = {
+        token: fcmResponse.fcmToken,
+        title: `Slot request ${isApproved ? 'Approved' : 'Rejected'} for ${formatDateUS(date)}`,
+        body: `${isApproved ? 'Approved' : 'Rejected'}  by ${firstName} ${lastName}`,
+      }
+      initializePushNotification(body)
+    }
+
     return res.status(200).json(new ApiResponse(200, response, 'Slot approved'))
   },
 )
@@ -244,10 +263,11 @@ export const handleSlotApproval = asyncHandler(
 // Controller to get all the services created by a service provider
 export const getMyBookedService = asyncHandler(
   async (req: Request, res: Response) => {
-    const { id, isAvailable } = req.body
+    const { id, type } = req.body
+
     const response = await service.getMyBookedService({
-      id: id,
-      isAvailable: isAvailable,
+      id,
+      type,
     })
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)

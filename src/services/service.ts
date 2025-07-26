@@ -169,9 +169,34 @@ const bookService = async (
   return res
 }
 
-const getUpcomingEvents = async (userId: string) => {
-  const bookedSchedules = await prisma.schedule.findMany({
-    where: { bookedUserId: userId },
+const getAllScheduledEvents = async (
+  userId: string,
+  isApproved: boolean,
+  isUpcoming: boolean,
+  date: Date,
+) => {
+  // const now = new Date()
+  const now = new Date()
+  now.setDate(now.getDate() - 1)
+  now.setUTCHours(0, 0, 0, 0) // Set the time to 00:00:00.000
+  // const formattedTime = now.toISOString() // This will give you the date in ISO format (YYYY-MM-DDTHH:mm:ss.sssZ)
+
+  const dateCondition = isUpcoming
+    ? { gt: now } // Upcoming: date is after now
+    : { lte: now } // Past: date is now or before
+  console.log({
+    bookedUserId: userId,
+    isApproved: isApproved,
+    date: dateCondition,
+  })
+
+  // Fetch all schedules booked by the user
+  const allSchedules = await prisma.schedule.findMany({
+    where: {
+      bookedUserId: userId,
+      isApproved: isApproved,
+      date: dateCondition,
+    },
     include: {
       services: {
         include: {
@@ -188,79 +213,16 @@ const getUpcomingEvents = async (userId: string) => {
             },
           },
           servicePreview: true,
-          schedule: {
-            where: { bookedUserId: userId }, // Fetch only schedules booked by the user
-          },
         },
       },
     },
+
+    orderBy: {
+      date: 'asc', // Assuming "date" field is used to schedule
+    },
   })
 
-  // Use a map to group services by serviceId and merge schedules
-  const uniqueServicesMap = new Map<string, any>()
-
-  bookedSchedules.forEach((schedule) => {
-    const service = schedule.services
-    if (service) {
-      const verifyExistingService = uniqueServicesMap.get(service.id)
-
-      // If the service already exists in the map, merge the schedules
-      if (verifyExistingService) {
-        // Filter out duplicate schedules based on schedule.id
-        const newSchedules = (service?.schedule || []).filter(
-          (sched) =>
-            !verifyExistingService.schedule.some(
-              (existingSched: any) => existingSched.id === sched.id,
-            ),
-        )
-
-        verifyExistingService.schedule = [
-          ...verifyExistingService.schedule,
-          ...newSchedules.map((sched) => ({
-            id: sched.id,
-            date: sched.date,
-            selected: true, // Mark schedules as selected since they are booked
-            servicesId: sched.servicesId,
-          })),
-        ]
-      } else {
-        // Otherwise, create a new entry for the service
-        uniqueServicesMap.set(service.id, {
-          userId: service?.user.id,
-          name: `${service?.user.firstName} ${service?.user.lastName}`,
-          email: service?.user.email,
-          username: service?.user.username,
-          phoneNumber: service?.user.phoneNumber,
-          isServiceProvider: service?.user.isServiceProvider,
-          avatarUri: service?.user.avatarUri || '',
-          serviceId: service?.id,
-          title: service?.title,
-          description: service?.description,
-          pricing: service?.pricing,
-          ratings: service?.ratings,
-          category: service?.category,
-          deletedAt: service?.deletedAt,
-          isDisabled: service?.isDisabled,
-          createdAt: service?.createdAt,
-          updatedAt: service?.updatedAt,
-          servicePreview: service?.servicePreview.map((preview) => ({
-            id: preview.id,
-            uri: preview.uri,
-            servicesId: preview.servicesId,
-          })),
-          schedule: (service?.schedule || []).map((sched) => ({
-            id: sched.id,
-            date: sched.date,
-            selected: true, // Mark schedules as selected since they are booked
-            servicesId: sched.servicesId,
-          })),
-        })
-      }
-    }
-  })
-
-  // Return the values of the map as the final result
-  return Array.from(uniqueServicesMap.values())
+  return allSchedules
 }
 
 const upsertService = async (
@@ -401,14 +363,27 @@ const handleSlotApproval = async (slotDetails: any) => {
 
 const getMyBookedService = async ({
   id,
-  isAvailable,
+  type,
 }: {
   id: string
-  isAvailable: boolean
+  type: string
 }) => {
+  const currentDate = new Date()
+  let dateFilter
+  let isApproved = true
+  currentDate.setUTCHours(0, 0, 0, 0)
+  if (type === 'Upcoming') {
+    dateFilter = { gte: currentDate }
+  } else if (type === 'Past') {
+    dateFilter = { lt: currentDate }
+  } else {
+    dateFilter = { gte: currentDate }
+    isApproved = false
+  }
   const bookedSchedules = await prisma.schedule.findMany({
     where: {
-      isAvailable,
+      isApproved,
+      date: dateFilter,
       bookedUserId: {
         not: null, // ✅ Only fetch schedules that have a booked user
       },
@@ -432,6 +407,12 @@ const getMyBookedService = async ({
       services: {
         include: {
           servicePreview: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
         },
       },
     },
@@ -444,7 +425,7 @@ export default {
   getMyService,
   getServicesByCategory,
   bookService,
-  getUpcomingEvents,
+  getAllScheduledEvents,
   upsertService,
   deleteService,
   getServiceById,

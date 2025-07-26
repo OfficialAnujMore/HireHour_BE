@@ -61,7 +61,7 @@ model servicePreview {
 
 model schedule {
   id            String    @id @default(uuid())
-  date          String
+  date          DateTime
   isAvailable   Boolean
   servicesId    String? // Todo -> Check if this field is requrired
   bookedUserId  String?
