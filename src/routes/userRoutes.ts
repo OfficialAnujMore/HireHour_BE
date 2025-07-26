@@ -3,6 +3,7 @@ import {
   loginUser,
   registerUser,
   updateUserRole,
+  upsertFCMToken,
   // verifyPhoneNumber,
   verifyEmailAndUsername,
   verifyOTP,
@@ -19,6 +20,7 @@ import {
   FORGET_USERNAME,
   FORGET_PASSWORD,
   VERIFY_OTP,
+  UPSERT_FCM_TOKEN,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
 
@@ -57,7 +59,7 @@ authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
 
 // Authenticated routes
 userRouter.post(UPDATE_ROLE, authentication, updateUserRole)
-
+userRouter.post(UPSERT_FCM_TOKEN, authentication, upsertFCMToken)
 
 /*
 TODO: Complete this method after all the validations are done

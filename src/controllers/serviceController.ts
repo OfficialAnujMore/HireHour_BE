@@ -1,5 +1,7 @@
 import { Request, Response } from 'express'
 import service from '../services/service'
+import transaction from '../services/transactionService'
+
 import { ApiError } from '../utils/ApiError'
 import { ApiResponse } from '../utils/ApiResponse'
 import { asyncHandler } from '../utils/asyncHandler'
@@ -9,6 +11,8 @@ import {
   Service,
   UpsertServiceRequestBody,
 } from '../interfaces/serviceInterface'
+import { FCM_MESSAGE } from '../utils/fcmMessage'
+import { initializePushNotification } from '../utils/helperFunctions'
 
 /**
  * 1. Create service - Done
@@ -56,15 +60,42 @@ export const getServicesByCategory = asyncHandler(
 
 // Controller to book a service
 export const bookService = asyncHandler(async (req: Request, res: Response) => {
-  const { userId, schedule } = req.body
+  const { userId, cartItems, paymentDetails } = req.body
+  const response = await service.bookService(userId, cartItems)
 
-  const response = await service.bookService(userId, schedule)
   if (!response) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
   }
+
+  const transactionResponse = await transaction.storeTransaction(
+    userId,
+    cartItems,
+    paymentDetails,
+  )
+
+  if (!transactionResponse) {
+    throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
+  }
+  const fcmResponse = await helperService.getUserFCMToken(userId)
+
+  if (fcmResponse?.fcmToken) {
+    const body = {
+      token: fcmResponse.fcmToken,
+      title: FCM_MESSAGE.slotBooked.title,
+      body: FCM_MESSAGE.slotBooked.body,
+    }
+    initializePushNotification(body)
+  }
+
   return res
     .status(200)
-    .json(new ApiResponse(200, response, SUCCESS_MESSAGE.bookingSuccessFull))
+    .json(
+      new ApiResponse(
+        200,
+        transactionResponse,
+        SUCCESS_MESSAGE.bookingSuccessFull,
+      ),
+    )
 })
 
 // Controller to get upcoming events for a user
@@ -102,6 +133,21 @@ export const upsertService = asyncHandler(
       ? SUCCESS_MESSAGE.serviceUpdated
       : SUCCESS_MESSAGE.serviceCreated
 
+    if (serviceData.userId) {
+      const fcmResponse = await helperService.getUserFCMToken(
+        serviceData.userId,
+      )
+
+      if (fcmResponse?.fcmToken) {
+        const body = {
+          token: fcmResponse.fcmToken,
+          title: FCM_MESSAGE.slotCreated.body,
+          body: message,
+        }
+        initializePushNotification(body)
+      }
+    }
+
     return res
       .status(serviceId ? 200 : 201)
       .json(new ApiResponse(serviceId ? 200 : 201, response, message))
@@ -110,24 +156,30 @@ export const upsertService = asyncHandler(
 
 export const deleteService = asyncHandler(
   async (req: Request, res: Response) => {
-    const serviceId = req.query.serviceId as string | undefined 
-    console.log({serviceId});
-    
+    const serviceId = req.query.serviceId as string | undefined
+    const fcmToken = req.query.fcmToken as string | undefined
 
     if (!serviceId) {
       return res.status(400).json(new ApiError(400, 'Service ID is required'))
     }
 
-    console.log('Deleting service with ID:', serviceId)
-
-    const existingService = await helperService.existingService(serviceId)
-    if (!existingService) {
+    const verifyExistingService =
+      await helperService.verifyExistingService(serviceId)
+    if (!verifyExistingService) {
       return res
         .status(404)
         .json(new ApiError(404, ERROR_MESSAGE.serviceNotFound))
     }
 
     await service.deleteService(serviceId)
+    if (fcmToken) {
+      const body = {
+        token: fcmToken,
+        title: FCM_MESSAGE.slotDeletion.title,
+        body: FCM_MESSAGE.slotDeletion.body,
+      }
+      initializePushNotification(body)
+    }
 
     return res
       .status(200)
@@ -146,6 +198,68 @@ export const getMyService = asyncHandler(
       .status(200)
       .json(
         new ApiResponse(200, response, 'User services retrieved successfully'),
+      )
+  },
+)
+
+// Controller to hold a schedule for
+export const holdSchedule = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { schedule } = req.body
+    const holdVerification =
+      await helperService.verifyScheduleAvailability(schedule)
+
+    if (holdVerification.length > 0) {
+      return res
+        .status(409)
+        .json(
+          new ApiResponse(
+            409,
+            holdVerification,
+            'Some slots are already been reserved',
+          ),
+        )
+    }
+    const response = await service.holdSchedule(schedule)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, response, SUCCESS_MESSAGE.bookingSuccessFull))
+  },
+)
+
+export const handleSlotApproval = asyncHandler(
+  async (req: Request, res: Response) => {
+    const response = await service.handleSlotApproval(req.body)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInSlotApproval)
+    }
+    return res.status(200).json(new ApiResponse(200, response, 'Slot approved'))
+  },
+)
+
+// Controller to get all the services created by a service provider
+export const getMyBookedService = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { id, isAvailable } = req.body
+    const response = await service.getMyBookedService({
+      id: id,
+      isAvailable: isAvailable,
+    })
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInService)
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          response,
+          'User booked services retrieved successfully',
+        ),
       )
   },
 )

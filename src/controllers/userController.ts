@@ -10,6 +10,7 @@ import {
 import {
   generateOTP,
   generateTokens,
+  initializePushNotification,
   otpExpireAfter,
 } from '../utils/helperFunctions'
 import { ApiError } from '../utils/ApiError'
@@ -20,14 +21,17 @@ import {
   LoginUserBody,
   RegisterUserBody,
   UpdateUserRoleBody,
+  UpsterFCMToken,
   ValidatePhoneNumber,
   ValidateUsernameAndEmailBody,
 } from '../interfaces/userInterface'
 import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
+import { FCM_MESSAGE } from '../utils/fcmMessage'
+import { sendTemplatedEmail } from '../utils/emailService'
 
 export const verifyEmailAndUsername = asyncHandler(
   async (req: Request<{}, {}, ValidateUsernameAndEmailBody>, res: Response) => {
-    const { username, email, password } = req.body
+    const { firstName, username, email, password } = req.body
 
     if (!EMAIL_REGEX.test(email)) {
       throw new ApiError(400, ERROR_MESSAGE.invalidEmail)
@@ -41,12 +45,12 @@ export const verifyEmailAndUsername = asyncHandler(
       throw new ApiError(400, ERROR_MESSAGE.invalidPassword)
     }
 
-    const duplicateEmail = await helperService.validateUserEmail(email)
+    const duplicateEmail = await helperService.verifyEmail(email)
     if (duplicateEmail) {
       throw new ApiError(400, ERROR_MESSAGE.duplicateEmail)
     }
 
-    const duplicateUsername = await helperService.validateUsername(username)
+    const duplicateUsername = await helperService.verifyUsername(username)
     if (duplicateUsername) {
       throw new ApiError(400, ERROR_MESSAGE.duplicateUsername)
     }
@@ -64,10 +68,20 @@ export const verifyEmailAndUsername = asyncHandler(
       throw new ApiError(500, ERROR_MESSAGE.otpGenerationFailed)
     }
 
+    await sendTemplatedEmail({
+      to: email,
+      templateId: process.env.OTP_VERIFICATION_TEMPLATE_ID || '', // Replace with your actual template ID
+      dynamicTemplateData: {
+        name: firstName,
+        otp: emailOTP,
+        year: new Date().getFullYear(),
+      },
+    })
+
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.otpSuccess),
       )
   },
 )
@@ -77,7 +91,7 @@ export const verifyPhoneNumber = asyncHandler(
     const { phoneNumber } = req.body
 
     const duplicatePhoneNumber =
-      await helperService.validatePhoneNumber(phoneNumber)
+      await helperService.verifyPhoneNumber(phoneNumber)
     if (duplicatePhoneNumber) {
       throw new ApiError(400, ERROR_MESSAGE.duplicatePhoneNumber)
     }
@@ -98,7 +112,7 @@ export const verifyPhoneNumber = asyncHandler(
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.otpSuccess),
       )
   },
 )
@@ -136,12 +150,21 @@ export const registerUser = asyncHandler(
     data.token = accessToken
     data.refreshToken = refreshToken
     data.password = await bcrypt.hash(data.password, BECRYPT_SALT_VALUE)
-    
+
     const user = await userService.registerUser(data)
 
     if (!user) {
       throw new ApiError(500, ERROR_MESSAGE.registrationFailure)
     }
+
+    await sendTemplatedEmail({
+      to: data.email,
+      templateId: process.env.WELCOME_TEMPLATE_ID || '', // Replace with your actual template ID
+      dynamicTemplateData: {
+        name: data.firstName,
+        year: new Date().getFullYear(),
+      },
+    })
 
     return res
       .status(201)
@@ -157,7 +180,7 @@ export const loginUser = asyncHandler(
       throw new ApiError(400, ERROR_MESSAGE.invalidEmail)
     }
 
-    const userExist = await helperService.verifyUserEmail(email)
+    const userExist = await helperService.verifyEmail(email)
     if (!userExist) {
       throw new ApiError(404, ERROR_MESSAGE.userEmailFound)
     }
@@ -191,7 +214,7 @@ export const updateUserRole = asyncHandler(
       throw new ApiError(400, ERROR_MESSAGE.generalError)
     }
 
-    const userExist = await helperService.verifyUser(id)
+    const userExist = await helperService.verifyExistingUser(id)
     if (!userExist) {
       throw new ApiError(404, ERROR_MESSAGE.userNotFound)
     }
@@ -199,6 +222,16 @@ export const updateUserRole = asyncHandler(
     const roleUpdateStatus = await userService.updateUserRole(id, isEnrolled)
     if (!roleUpdateStatus) {
       throw new ApiError(500, ERROR_MESSAGE.enrollmentFailure)
+    }
+    const fcmResponse = await helperService.getUserFCMToken(id)
+
+    if (fcmResponse?.fcmToken) {
+      const body = {
+        token: fcmResponse.fcmToken,
+        title: FCM_MESSAGE.serviceProviderEnrollment.title,
+        body: FCM_MESSAGE.serviceProviderEnrollment.body,
+      }
+      initializePushNotification(body)
     }
 
     return res
@@ -218,7 +251,7 @@ export const forgetEmail = asyncHandler(
     const { phoneNumber } = req.body
 
     // Check if phone number exists
-    const user = await helperService.validatePhoneNumber(phoneNumber)
+    const user = await helperService.verifyPhoneNumber(phoneNumber)
     if (!user) {
       throw new ApiError(404, ERROR_MESSAGE.userNotFound)
     }
@@ -239,7 +272,7 @@ export const forgetEmail = asyncHandler(
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.otpSuccess),
       )
   },
 )
@@ -249,7 +282,7 @@ export const forgetUsername = asyncHandler(
     const { email } = req.body
 
     // Check if the user exists with the provided email
-    const user = await helperService.verifyUserEmail(email)
+    const user = await helperService.verifyEmail(email)
     if (!user) {
       throw new ApiError(404, ERROR_MESSAGE.userNotFound)
     }
@@ -270,18 +303,17 @@ export const forgetUsername = asyncHandler(
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.otpSuccess),
       )
   },
 )
-
 
 export const forgetPassword = asyncHandler(
   async (req: Request<{}, {}, { email: string }>, res: Response) => {
     const { email } = req.body
 
     // Check if the email exists
-    const user = await helperService.verifyUserEmail(email)
+    const user = await helperService.verifyEmail(email)
     if (!user) {
       throw new ApiError(404, ERROR_MESSAGE.userNotFound)
     }
@@ -302,9 +334,27 @@ export const forgetPassword = asyncHandler(
     return res
       .status(200)
       .json(
-        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.OTPSuccess),
+        new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.otpSuccess),
       )
   },
 )
 
+export const upsertFCMToken = asyncHandler(
+  async (req: Request<{}, {}, UpsterFCMToken>, res: Response) => {
+    const { userId, fcmToken } = req.body
+    if (!userId) {
+      throw new ApiError(400, ERROR_MESSAGE.generalError)
+    }
 
+    const userExist = await helperService.verifyExistingUser(userId)
+    if (!userExist) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+    const response = await userService.upsertFCMToken(userId, fcmToken)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.fcmTokenFailure)
+    }
+
+    return res.status(200).json(new ApiResponse(200, response, ''))
+  },
+)

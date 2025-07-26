@@ -2,9 +2,12 @@ import { Router } from 'express'
 import {
   bookService,
   deleteService,
+  getMyBookedService,
   getMyService,
   getServicesByCategory,
   getUpcomingEvents,
+  handleSlotApproval,
+  holdSchedule,
   upsertService,
 } from '../controllers/serviceController'
 import {
@@ -14,6 +17,9 @@ import {
   GET_SERVICE_PROVIDERS,
   GET_USER_SERVICES,
   UPCOMING_EVENTS,
+  HOLD_SLOTS,
+  APPROVE_SLOTS,
+  GET_BOOKED_SERVICES,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
 import { authorization } from '../middlewares/authorization'
@@ -34,6 +40,21 @@ authorizedServiceRouter.post(
   authorization,
   getMyService,
 )
+authorizedServiceRouter.post(
+  APPROVE_SLOTS,
+  authentication,
+  authorization,
+  handleSlotApproval,
+)
+
+authorizedServiceRouter.post(
+  GET_BOOKED_SERVICES,
+  authentication,
+  authorization,
+  getMyBookedService,
+)
+
+
 authorizedServiceRouter.delete(
   DELETE_SERVICE,
   authentication,
@@ -43,6 +64,7 @@ authorizedServiceRouter.delete(
 
 serviceRouter.get(GET_SERVICE_PROVIDERS, authentication, getServicesByCategory)
 serviceRouter.post(BOOK_SERVICE, authentication, bookService)
+serviceRouter.post(HOLD_SLOTS, authentication, holdSchedule)
 serviceRouter.post(UPCOMING_EVENTS, authentication, getUpcomingEvents)
 
-export default {authorizedServiceRouter,serviceRouter}
+export default { authorizedServiceRouter, serviceRouter }

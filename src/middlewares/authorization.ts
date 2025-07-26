@@ -8,8 +8,6 @@ export const authorization = async (
   next: NextFunction,
 ) => {
   const user = (req as any).user // Access the user data attached in the authentication middleware
-  console.log(`user details in authorization: ${JSON.stringify(user)}`)
-
   if (!user) {
     return res.status(403).json(new ApiError(403, 'Forbidden: No user data'))
   }
@@ -28,9 +26,6 @@ export const authorization = async (
         email: user.data.email,
       },
     })
-
-    console.log(foundUser)
-
     if (!foundUser) {
       return res
         .status(403)

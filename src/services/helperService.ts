@@ -2,7 +2,7 @@ import prisma from '../prisma/client'
 import { CREATE_PREVIEW } from '../utils/ApiResponseConstants'
 
 // HELPER FUNCTIONS
-const verifyUserEmail = async (email: string) => {
+const verifyEmail = async (email: string) => {
   return await prisma.user.findUnique({
     where: {
       email,
@@ -10,15 +10,7 @@ const verifyUserEmail = async (email: string) => {
   })
 }
 
-const validateUserEmail = async (email: string) => {
-  return await prisma.user.findFirst({
-    where: {
-      email,
-    },
-    select: CREATE_PREVIEW,
-  })
-}
-const validateUsername = async (username: string) => {
+const verifyUsername = async (username: string) => {
   return await prisma.user.findFirst({
     where: {
       username: username,
@@ -27,7 +19,7 @@ const validateUsername = async (username: string) => {
   })
 }
 
-const validatePhoneNumber = async (phoneNumber: string) => {
+const verifyPhoneNumber = async (phoneNumber: string) => {
   return await prisma.user.findFirst({
     where: {
       phoneNumber: phoneNumber,
@@ -72,7 +64,7 @@ const deleteVerifiedOTP = async (key: string, otp: string) => {
   })
 }
 
-const verifyUser = async (id: string) => {
+const verifyExistingUser = async (id: string) => {
   return await prisma.user.findFirst({
     where: {
       AND: [{ id: id }, { isDisabled: false }, { deletedAt: null }],
@@ -81,7 +73,7 @@ const verifyUser = async (id: string) => {
   })
 }
 
-const existingService = async (id: string) => {
+const verifyExistingService = async (id: string) => {
   return await prisma.services.findFirst({
     where: {
       AND: [{ id: id }, { isDisabled: false }, { deletedAt: null }],
@@ -89,30 +81,49 @@ const existingService = async (id: string) => {
   })
 }
 
-const verifyUserRole = async (id: string) => {
+const getUserFCMToken = async (id: string) => {
   return await prisma.user.findFirst({
     where: {
-      AND: [
-        { id: id },
-        { isDisabled: false },
-        { deletedAt: null },
-        { isServiceProvider: true },
-      ],
+      AND: { id: id },
     },
-    select: CREATE_PREVIEW,
   })
 }
 
+const verifyScheduleAvailability = async (
+  schedule: {
+    id: string
+    servicesId: string
+    date: string
+    selected: boolean
+    isAvailable: boolean
+  }[],
+) => {
+  const responsePromise = schedule.map((scheduleItem) =>
+    prisma.schedule.findMany({
+      where: {
+        AND: [
+          { id: scheduleItem.id },
+          {
+            isAvailable: false,
+          },
+        ],
+      },
+    }),
+  )
+  const nestedResult = await Promise.all(responsePromise)
+  const flatResult = nestedResult.flat() // flatten the arrays
+  return flatResult;
+}
 
 export default {
-  validateUserEmail,
-  validateUsername,
-  validatePhoneNumber,
-  verifyUserEmail,
-  verifyUser,
+  verifyEmail,
+  verifyUsername,
+  verifyPhoneNumber,
+  verifyExistingUser,
   storeOTP,
   verifyOTP,
   deleteVerifiedOTP,
-  existingService,
-  verifyUserRole
+  verifyExistingService,
+  getUserFCMToken,
+  verifyScheduleAvailability,
 }

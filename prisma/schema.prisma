@@ -1,11 +1,10 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-}
-
-generator client {
-  provider = "prisma-client-js"
-  // output   = "./node_modules/@prisma/client"
 }
 
 model user {
@@ -18,53 +17,60 @@ model user {
   password          String
   isServiceProvider Boolean    @default(false)
   avatarUri         String?
-  token             String?
-  refreshToken      String?
+  token             String
+  refreshToken      String
   fcmToken          String?
   lastLogin         DateTime   @default(now())
   deletedAt         DateTime?
   isDisabled        Boolean    @default(false)
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
-  services          services[]
   userPreference    String[]
   schedule          schedule[]
+  services          services[]
 
-  @@index(fields: [id, email, username])
+  @@index([id, email, username])
 }
 
 model services {
   id             String           @id @default(uuid())
   title          String
   description    String
-  servicePreview servicePreview[]
-  schedule       schedule[]
-  pricing        Float            @default(0.0)
   category       String
   ratings        String           @default("5.0")
-  user           user             @relation(fields: [userId], references: [id])
   userId         String
-  deletedAt      DateTime?
+  pricing        Float            @default(0.0)
   isDisabled     Boolean          @default(false)
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
+  schedule       schedule[]
+  servicePreview servicePreview[]
+  user           user             @relation(fields: [userId], references: [id])
+  // transaction    transaction[]
 }
 
 model servicePreview {
   id         String    @id @default(uuid())
   uri        String
-  services   services? @relation(fields: [servicesId], references: [id])
   servicesId String?
+  services   services? @relation(fields: [servicesId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
 model schedule {
-  id           String    @id @default(uuid())
-  date         String
-  isAvailable  Boolean
-  services     services? @relation(fields: [servicesId], references: [id])
-  servicesId   String?
-  bookedUser   user?     @relation(fields: [bookedUserId], references: [id])
-  bookedUserId String?
+  id            String    @id @default(uuid())
+  date          String
+  isAvailable   Boolean
+  servicesId    String? // Todo -> Check if this field is requrired
+  bookedUserId  String?
+  holdExpiresAt DateTime?
+  isApproved    Boolean   @default(false)
+  bookedUser    user?     @relation(fields: [bookedUserId], references: [id])
+  services      services? @relation(fields: [servicesId], references: [id])
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model otp {
@@ -74,6 +80,49 @@ model otp {
   field       String
   type        String
   expireAfter DateTime
+}
+
+model transaction {
+  id               String            @id @default(uuid())
+  userId           String
+  paymentId        String
+  transactionType  String
+  paymentStatus    String
+  totalAmount      Decimal
+  tax              Decimal
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt()
+  transactionItems transactionItem[]
+}
+
+model transactionItem {
+  id                String                @id @default(uuid())
+  transactionId     String
+  serviceId         String
+  serviceTitle      String
+  servicePrice      Decimal
+  serviceProviderId String
+  venue             String
+  meetingUrl        String?
+  address           String?
+  city              String?
+  postalCode        String?
+  state             String?
+  country           String?
+  transaction       transaction           @relation(fields: [transactionId], references: [id])
+  schedules         TransactionSchedule[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+}
+
+model TransactionSchedule {
+  id                String          @id @default(uuid())
+  transactionItemId String
+  scheduleId        String
+  date              DateTime
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  transactionItem   transactionItem @relation(fields: [transactionItemId], references: [id])
 }
 
 model baseConfiguration {
