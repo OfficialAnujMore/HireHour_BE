@@ -28,11 +28,10 @@ app.use(
   }),
 )
 
-app.use(express.json({ limit: '16kb' }))
-app.use(express.urlencoded({ extended: true, limit: '16kb' }))
+app.use(express.json({ limit: '50mb' }))
+app.use(express.urlencoded({ extended: true, limit: '50mb' }))
 app.use(express.static('public'))
 app.use(cookieParser())
-app.use(express.json())
 
 app.use(V1_AUTH_BASE_ROUTE, authRouter)
 app.use(V1_USER_BASE_ROUTE, userRouter)
@@ -43,6 +42,16 @@ app.use(V1_TRANSACTION_BASE_ROUTE, transactionRouter)
 
 app.use((err: Error, _req: Request, res: Response, next: NextFunction) => {
   console.error('Error caught in middleware:', err) // Debugging
+
+  // Handle payload too large errors
+  if (err.name === 'PayloadTooLargeError' || err.message.includes('entity too large')) {
+    return res.status(413).json({
+      statusCode: 413,
+      message: 'Request payload too large. Please reduce image size or compress images.',
+      success: false,
+      errors: [],
+    })
+  }
 
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json(err.toJSON())

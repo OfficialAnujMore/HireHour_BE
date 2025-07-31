@@ -15,7 +15,7 @@ const sendTemplatedEmail = async ({ to, templateId, dynamicTemplateData, }) => {
         dynamicTemplateData,
     };
     try {
-        // await sgMail.send(msg)
+        await mail_1.default.send(msg);
         console.log(`✅ Templated email sent to ${to}`);
     }
     catch (error) {

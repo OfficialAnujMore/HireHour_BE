@@ -44,6 +44,7 @@ interface UpsertServiceRequestBody {
   ratings?: string
   servicePreview?: {
     uri: string
+    isBase64?: boolean
   }[]
   selectedDates?: {
     [date: string]: {

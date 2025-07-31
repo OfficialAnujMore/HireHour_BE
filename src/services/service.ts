@@ -1,5 +1,7 @@
 import prisma from '../prisma/client'
 import { UpsertServiceRequestBody } from '../interfaces/serviceInterface'
+import { uploadMultipleImagesToCloudinary, deleteMultipleImagesFromCloudinary } from '../utils/cloudinaryService'
+import { base64ToBuffer, isValidBase64Image, isRemoteUrl } from '../utils/imageUtils'
 
 const getMyService = async (id?: string) => {
   const services = await prisma.services.findMany({
@@ -229,6 +231,58 @@ const upsertService = async (
   serviceData: UpsertServiceRequestBody,
   serviceId?: string, // Optional for update
 ) => {
+  // Handle image uploads if servicePreview exists
+  let processedServicePreview = serviceData.servicePreview
+
+  if (serviceData.servicePreview?.length) {
+    const imagesToUpload: Buffer[] = []
+    const processedImages: { uri: string }[] = []
+
+    for (const preview of serviceData.servicePreview) {
+      // If it's already a remote URL (Cloudinary), keep it as is
+      if (isRemoteUrl(preview.uri)) {
+        processedImages.push({ uri: preview.uri })
+        continue
+      }
+
+      // If it's a base64 image, convert to buffer for upload
+      if (preview.isBase64 || isValidBase64Image(preview.uri)) {
+        try {
+          const imageBuffer = base64ToBuffer(preview.uri)
+          imagesToUpload.push(imageBuffer)
+        } catch (error) {
+          console.error('Error converting base64 to buffer:', error)
+          throw new Error('Invalid image format')
+        }
+      } else {
+        // For local file URIs, we'll need to handle them differently
+        // For now, we'll skip them and log a warning
+        console.warn('Local file URI detected, skipping:', preview.uri)
+        continue
+      }
+    }
+
+    // Upload images to Cloudinary if there are any to upload
+    if (imagesToUpload.length > 0) {
+      try {
+        const uploadResults = await uploadMultipleImagesToCloudinary(
+          imagesToUpload,
+          `hirehour-services/user-${serviceData.userId}`
+        )
+
+        // Add uploaded image URLs to processed images
+        uploadResults.forEach((result) => {
+          processedImages.push({ uri: result.secure_url })
+        })
+      } catch (error) {
+        console.error('Error uploading images to Cloudinary:', error)
+        throw new Error('Failed to upload images')
+      }
+    }
+
+    processedServicePreview = processedImages
+  }
+
   if (serviceId) {
     // Update existing service: delete old records first
     await prisma.servicePreview.deleteMany({
@@ -246,9 +300,9 @@ const upsertService = async (
     pricing: parseFloat(serviceData.pricing),
     userId: serviceData.userId,
     category: serviceData.category,
-    servicePreview: serviceData.servicePreview?.length
+    servicePreview: processedServicePreview?.length
       ? {
-          create: serviceData.servicePreview.map((preview) => ({
+          create: processedServicePreview.map((preview) => ({
             uri: preview.uri,
           })),
         }
