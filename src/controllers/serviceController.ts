@@ -10,6 +10,13 @@ import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 import {
   Service,
   UpsertServiceRequestBody,
+  BookServiceRequestBody,
+  SlotApprovalRequestBody,
+  HoldSlotRequestBody,
+  GetUserServicesRequest,
+  GetBookedServicesRequest,
+  DeleteServiceRequest,
+  UpcomingEventsRequest,
 } from '../interfaces/serviceInterface'
 import { FCM_MESSAGE } from '../utils/fcmMessage'
 import { formatDateUS, initializePushNotification } from '../utils/helperFunctions'
@@ -67,11 +74,11 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
   }
 
-  const transactionResponse = await transaction.storeTransaction(
+  const transactionResponse = await transaction.storeTransaction({
     userId,
     cartItems,
     paymentDetails,
-  )
+  })
 
   if (!transactionResponse) {
     throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
@@ -100,12 +107,17 @@ export const bookService = asyncHandler(async (req: Request, res: Response) => {
 
 // Controller to get upcoming events for a user
 export const getUpcomingEvents = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { userId } = req.body
+  async (req: Request<{}, {}, UpcomingEventsRequest>, res: Response) => {
+    const { userId, type, limit, offset } = req.body
+    
+    if (!userId) {
+      throw new ApiError(400, 'User ID is required')
+    }
+
     const response = await service.getAllScheduledEvents(
       userId,
-      true,
-      true,
+      type === 'upcoming',
+      type === 'past',
       new Date(),
     )
     
@@ -162,23 +174,20 @@ export const upsertService = asyncHandler(
 
 export const deleteService = asyncHandler(
   async (req: Request, res: Response) => {
-    const serviceId = req.query.serviceId as string | undefined
-    const fcmToken = req.query.fcmToken as string | undefined
+    const { serviceId, fcmToken } = req.query
 
-    if (!serviceId) {
-      return res.status(400).json(new ApiError(400, 'Service ID is required'))
+    if (!serviceId || typeof serviceId !== 'string') {
+      throw new ApiError(400, 'Service ID is required')
     }
 
     const verifyExistingService =
       await helperService.verifyExistingService(serviceId)
     if (!verifyExistingService) {
-      return res
-        .status(404)
-        .json(new ApiError(404, ERROR_MESSAGE.serviceNotFound))
+      throw new ApiError(404, ERROR_MESSAGE.serviceNotFound)
     }
 
     await service.deleteService(serviceId)
-    if (fcmToken) {
+    if (fcmToken && typeof fcmToken === 'string') {
       const body = {
         token: fcmToken,
         title: FCM_MESSAGE.slotDeletion.title,
@@ -195,8 +204,14 @@ export const deleteService = asyncHandler(
 
 // Controller to get all the services created by a service provider
 export const getMyService = asyncHandler(
-  async (req: Request, res: Response) => {
-    const response = await service.getMyService(req.body.id)
+  async (req: Request<{}, {}, GetUserServicesRequest>, res: Response) => {
+    const { userId, type } = req.body
+    
+    if (!userId) {
+      throw new ApiError(400, 'User ID is required')
+    }
+
+    const response = await service.getMyService(userId)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)
     }
@@ -208,12 +223,47 @@ export const getMyService = asyncHandler(
   },
 )
 
+// Controller to get user's existing schedule dates
+export const getUserScheduleDates = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId } = req.query
+    
+    if (!userId || typeof userId !== 'string') {
+      throw new ApiError(400, 'User ID is required')
+    }
+
+    const response = await service.getUserScheduleDates(userId)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInService)
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, response, 'User schedule dates retrieved successfully'),
+      )
+  },
+)
+
 // Controller to hold a schedule for
 export const holdSchedule = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request<{}, {}, HoldSlotRequestBody>, res: Response) => {
     const { schedule } = req.body
+    
+    if (!schedule || !schedule.serviceId || !schedule.date || !schedule.userId) {
+      throw new ApiError(400, 'Invalid schedule data')
+    }
+
+    // Transform schedule to match expected interface
+    const scheduleArray = [{
+      id: schedule.serviceId, // Using serviceId as id since we don't have a separate id
+      servicesId: schedule.serviceId,
+      date: schedule.date,
+      selected: true,
+      isAvailable: true
+    }]
+
     const holdVerification =
-      await helperService.verifyScheduleAvailability(schedule)
+      await helperService.verifyScheduleAvailability(scheduleArray)
 
     if (holdVerification.length > 0) {
       return res
@@ -226,7 +276,7 @@ export const holdSchedule = asyncHandler(
           ),
         )
     }
-    const response = await service.holdSchedule(schedule)
+    const response = await service.holdSchedule(scheduleArray)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.bookingFailure)
     }
@@ -238,32 +288,41 @@ export const holdSchedule = asyncHandler(
 )
 
 export const handleSlotApproval = asyncHandler(
-  async (req: Request, res: Response) => {
-    const { date, isApproved, bookedUser, services } = req.body
-    const { firstName, lastName } = services.user
+  async (req: Request<{}, {}, SlotApprovalRequestBody>, res: Response) => {
+    const { serviceId, scheduleId, isApproved, userId } = req.body
+    
+    if (!serviceId || !scheduleId || !userId) {
+      throw new ApiError(400, 'Service ID, Schedule ID, and User ID are required')
+    }
+
     const response = await service.handleSlotApproval(req.body)
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInSlotApproval)
     }
 
-    const fcmResponse = await helperService.getUserFCMToken(bookedUser.id)
-    if (fcmResponse?.fcmToken) {
+    // Get user details for notification
+    const userDetails = await helperService.verifyExistingUser(userId)
+    if (userDetails?.fcmToken) {
       const body = {
-        token: fcmResponse.fcmToken,
-        title: `Slot request ${isApproved ? 'Approved' : 'Rejected'} for ${formatDateUS(date)}`,
-        body: `${isApproved ? 'Approved' : 'Rejected'}  by ${firstName} ${lastName}`,
+        token: userDetails.fcmToken,
+        title: `Slot request ${isApproved ? 'Approved' : 'Rejected'}`,
+        body: `Your slot request has been ${isApproved ? 'approved' : 'rejected'}`,
       }
       initializePushNotification(body)
     }
 
-    return res.status(200).json(new ApiResponse(200, response, 'Slot approved'))
+    return res.status(200).json(new ApiResponse(200, response, 'Slot approval processed'))
   },
 )
 
 // Controller to get all the services created by a service provider
 export const getMyBookedService = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request<{}, {}, GetBookedServicesRequest>, res: Response) => {
     const { id, type } = req.body
+
+    if (!id || !type) {
+      throw new ApiError(400, 'User ID and type are required')
+    }
 
     const response = await service.getMyBookedService({
       id,

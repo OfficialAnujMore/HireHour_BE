@@ -7,6 +7,9 @@ export const SUCCESS_MESSAGE = {
   serviceCreated: 'Service created successfully.',
   serviceUpdated: 'Service updated successfully.',
   serviceRetreive: 'Service retrieved successfully.',
+  updateSuccess: 'Profile updated successfully.',
+  validationSuccess: 'Validation completed successfully.',
+  passwordResetSuccess: 'Password reset successfully.',
 
   // General Success
   success: 'Request completed successfully.',
@@ -29,6 +32,7 @@ export const ERROR_MESSAGE = {
   loginFailure: 'Login failed. Please check your credentials.',
   userEmailFound: 'No account found with this email. Please register.',
   userNotFound: 'User not found.',
+  updateFailure: 'Failed to update profile. Please try again.',
 
   enrollmentFailure: 'Failed to enroll as a service provider.',
   fcmTokenFailure: 'Unable to enable notifications.',

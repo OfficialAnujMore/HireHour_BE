@@ -6,7 +6,7 @@ import {
   EMAIL_REGEX,
   PASSWORD_REGEX,
   USERNAME_REGEX,
-} from '../utils/constants'
+} from '../constants'
 import {
   generateOTP,
   generateTokens,
@@ -24,6 +24,12 @@ import {
   UpsterFCMToken,
   ValidatePhoneNumber,
   ValidateUsernameAndEmailBody,
+  UpdateUserDetailsBody,
+  ValidateExistingUserBody,
+  ForgetEmailBody,
+  ForgetUsernameBody,
+  ForgetPasswordBody,
+  ResetPasswordBody,
 } from '../interfaces/userInterface'
 import { ERROR_MESSAGE, SUCCESS_MESSAGE } from '../utils/message'
 import { FCM_MESSAGE } from '../utils/fcmMessage'
@@ -144,6 +150,12 @@ export const verifyOTP = asyncHandler(
 export const registerUser = asyncHandler(
   async (req: Request<{}, {}, RegisterUserBody>, res: Response) => {
     const data = req.body
+    
+    // Validate password format
+    if (!PASSWORD_REGEX.test(data.password)) {
+      throw new ApiError(400, ERROR_MESSAGE.invalidPassword)
+    }
+    
     const { accessToken, refreshToken } = await generateTokens({
       email: data.email,
     })
@@ -152,6 +164,7 @@ export const registerUser = asyncHandler(
     data.password = await bcrypt.hash(data.password, BECRYPT_SALT_VALUE)
 
     const user = await userService.registerUser(data)
+    console.log('User data after registration', user);
 
     if (!user) {
       throw new ApiError(500, ERROR_MESSAGE.registrationFailure)
@@ -186,7 +199,7 @@ export const loginUser = asyncHandler(
     }
 
     const isPasswordValid = await bcrypt.compare(password, userExist.password)
-    if (!isPasswordValid || !PASSWORD_REGEX.test(password)) {
+    if (!isPasswordValid) {
       throw new ApiError(401, ERROR_MESSAGE.invalidPassword)
     }
 
@@ -319,6 +332,7 @@ export const forgetPassword = asyncHandler(
     }
 
     const passwordOTP = await generateOTP()
+    console.log(`Generated OTP for ${email}: ${passwordOTP}`) // Temporary logging for testing
     const storePasswordOTPResponse = await helperService.storeOTP(
       passwordOTP,
       email,
@@ -331,10 +345,67 @@ export const forgetPassword = asyncHandler(
       throw new ApiError(500, ERROR_MESSAGE.otpGenerationFailed)
     }
 
+    // Send password reset email
+    await sendTemplatedEmail({
+      to: email,
+      templateId: process.env.PASSWORD_RESET_TEMPLATE_ID || '', // Replace with your actual template ID
+      dynamicTemplateData: {
+        name: user.firstName,
+        otp: passwordOTP,
+        year: new Date().getFullYear(),
+      },
+    })
+
     return res
       .status(200)
       .json(
         new ApiResponse(200, { otpStatus: true }, SUCCESS_MESSAGE.otpSuccess),
+      )
+  },
+)
+
+export const resetPassword = asyncHandler(
+  async (req: Request<{}, {}, ResetPasswordBody>, res: Response) => {
+    const { email, otp, newPassword } = req.body
+
+    // Validate email format
+    if (!EMAIL_REGEX.test(email)) {
+      throw new ApiError(400, ERROR_MESSAGE.invalidEmail)
+    }
+
+    // Validate password format
+    if (!PASSWORD_REGEX.test(newPassword)) {
+      throw new ApiError(400, ERROR_MESSAGE.invalidPassword)
+    }
+
+    // Check if the user exists
+    const user = await helperService.verifyEmail(email)
+    if (!user) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+
+    // Verify OTP
+    const storedOTP = await helperService.verifyOTP(email)
+    if (!storedOTP || storedOTP.otp !== otp) {
+      throw new ApiError(400, ERROR_MESSAGE.invalidOTP)
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, BECRYPT_SALT_VALUE)
+
+    // Update the user's password
+    const updatedUser = await userService.updateUserPassword(user.id, hashedPassword)
+    if (!updatedUser) {
+      throw new ApiError(500, ERROR_MESSAGE.updateFailure)
+    }
+
+    // Delete the used OTP
+    await helperService.deleteVerifiedOTP(email, otp)
+
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { success: true }, SUCCESS_MESSAGE.passwordResetSuccess),
       )
   },
 )
@@ -356,5 +427,40 @@ export const upsertFCMToken = asyncHandler(
     }
 
     return res.status(200).json(new ApiResponse(200, response, ''))
+  },
+)
+
+export const updateUserDetails = asyncHandler(
+  async (req: Request<{}, {}, UpdateUserDetailsBody>, res: Response) => {
+    const data = req.body
+    if (!data.id) {
+      throw new ApiError(400, ERROR_MESSAGE.generalError)
+    }
+
+    const userExist = await helperService.verifyExistingUser(data.id)
+    if (!userExist) {
+      throw new ApiError(404, ERROR_MESSAGE.userNotFound)
+    }
+
+    const response = await userService.updateUserDetails(data)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.updateFailure)
+    }
+
+    return res.status(200).json(new ApiResponse(200, response, SUCCESS_MESSAGE.updateSuccess))
+  },
+)
+
+export const validateExistingUser = asyncHandler(
+  async (req: Request<{}, {}, ValidateExistingUserBody>, res: Response) => {
+    const data = req.body
+    const { email, username, phoneNumber } = data
+
+    if (!email && !username && !phoneNumber) {
+      throw new ApiError(400, ERROR_MESSAGE.generalError)
+    }
+
+    const response = await userService.validateExistingUser(data)
+    return res.status(200).json(new ApiResponse(200, response, SUCCESS_MESSAGE.validationSuccess))
   },
 )

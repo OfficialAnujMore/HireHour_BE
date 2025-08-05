@@ -4,21 +4,29 @@ import {
   registerUser,
   updateUserRole,
   upsertFCMToken,
+  updateUserDetails,
+  validateExistingUser,
   // verifyPhoneNumber,
   verifyEmailAndUsername,
   verifyOTP,
   verifyPhoneNumber,
+  forgetPassword,
+  forgetUsername,
+  forgetEmail,
+  resetPassword,
 } from '../controllers/userController'
 import {
   REGISTER_USER,
   LOGIN_USER,
-
   UPDATE_ROLE,
+  UPDATE_USER_DETAILS,
+  VALIDATE_EXISTING_USER,
   VERIFY_EMAIL_AND_USERNAME,
   VERIFY_PHONE,
   FORGET_EMAIL,
   FORGET_USERNAME,
   FORGET_PASSWORD,
+  RESET_PASSWORD,
   VERIFY_OTP,
   UPSERT_FCM_TOKEN,
 } from './constants'
@@ -50,15 +58,17 @@ authRouter.post(LOGIN_USER, loginUser)
 authRouter.post(VERIFY_EMAIL_AND_USERNAME, verifyEmailAndUsername)
 authRouter.post(VERIFY_OTP, verifyOTP)
 authRouter.post(VERIFY_PHONE, verifyPhoneNumber)
-// TODO
-// authRouter.post(FORGET_EMAIL, loginUser);
-// authRouter.post(FORGET_USERNAME, loginUser);
-// authRouter.post(FORGET_PASSWORD, loginUser);
+authRouter.post(FORGET_PASSWORD, forgetPassword)
+authRouter.post(FORGET_USERNAME, forgetUsername)
+authRouter.post(FORGET_EMAIL, forgetEmail)
+authRouter.post(RESET_PASSWORD, resetPassword)
 
 
 
 // Authenticated routes
 userRouter.post(UPDATE_ROLE, authentication, updateUserRole)
+userRouter.post(UPDATE_USER_DETAILS, authentication, updateUserDetails)
+userRouter.post(VALIDATE_EXISTING_USER, validateExistingUser)
 userRouter.post(UPSERT_FCM_TOKEN, authentication, upsertFCMToken)
 
 /*

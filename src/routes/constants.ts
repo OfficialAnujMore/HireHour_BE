@@ -19,7 +19,8 @@ export const REGISTER_USER = '/registerUser'
 export const LOGIN_USER = '/loginUser'
 export const FORGET_EMAIL = '/forgetEmail'
 export const FORGET_USERNAME = '/forgetUsername'
-export const FORGET_PASSWORD = '/resetPassword'
+export const FORGET_PASSWORD = '/forgetPassword'
+export const RESET_PASSWORD = '/resetPassword'
 export const VALIDATE_EXISTING_USER = '/validateExistingUser'
 export const UPDATE_USER_DETAILS = '/updateUserDetails'
 export const VERIFY_EMAIL_AND_USERNAME = '/verifyUsernameAndEmail'
@@ -38,7 +39,7 @@ export const BOOK_SERVICE = '/bookService'
 export const HOLD_SLOTS = '/holdSlots'
 export const APPROVE_SLOTS = '/approveSlots'
 export const GET_BOOKED_SERVICES = '/getBookedService'
-
+export const GET_USER_SCHEDULE_DATES = '/getUserScheduleDates'
 
 
 export const UPCOMING_EVENTS = '/upcomingEvents'

@@ -422,57 +422,37 @@ const getMyBookedService = async ({
   id: string
   type: string
 }) => {
-  const currentDate = new Date()
-  let dateFilter
-  let isApproved = true
-  currentDate.setUTCHours(0, 0, 0, 0)
-  if (type === 'Upcoming') {
-    dateFilter = { gte: currentDate }
-  } else if (type === 'Past') {
-    dateFilter = { lt: currentDate }
-  } else {
-    dateFilter = { gte: currentDate }
-    isApproved = false
-  }
-  const bookedSchedules = await prisma.schedule.findMany({
+  const isUpcoming = type === 'upcoming'
+  const isApproved = type === 'approved'
+
+  const response = await getAllScheduledEvents(id, isApproved, isUpcoming, new Date())
+  return response
+}
+
+const getUserScheduleDates = async (userId: string) => {
+  // Get all schedule dates for the user's services
+  const userSchedules = await prisma.schedule.findMany({
     where: {
-      isApproved,
-      date: dateFilter,
-      bookedUserId: {
-        not: null, // ✅ Only fetch schedules that have a booked user
-      },
       services: {
-        userId: id,
+        userId: userId,
         deletedAt: null,
         isDisabled: false,
       },
     },
-    include: {
-      bookedUser: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phoneNumber: true,
-          avatarUri: true,
-        },
-      },
-      services: {
-        include: {
-          servicePreview: true,
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      },
+    select: {
+      date: true,
+    },
+    orderBy: {
+      date: 'asc',
     },
   })
 
-  return bookedSchedules
+  // Extract unique dates and format them
+  const uniqueDates = [...new Set(userSchedules.map(schedule => 
+    schedule.date.toISOString().split('T')[0] // Format as YYYY-MM-DD
+  ))]
+
+  return uniqueDates
 }
 
 export default {
@@ -486,4 +466,5 @@ export default {
   holdSchedule,
   handleSlotApproval,
   getMyBookedService,
+  getUserScheduleDates,
 }

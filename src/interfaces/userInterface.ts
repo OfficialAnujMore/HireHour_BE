@@ -10,6 +10,8 @@ interface User {
   password: string
   isServiceProvider: boolean
   avatarUri?: string
+  profileImageURL?: string
+  bannerImageURL?: string
   token?: string
   refreshToken?: string
   fcmToken?: string
@@ -18,8 +20,8 @@ interface User {
   isDisabled: boolean
   createdAt: Date
   updatedAt: Date
-  userPreference: string[]
-  schedule: Schedule[]
+  userPreference?: string[]
+  schedule?: Schedule[]
 }
 
 interface RegisterUserBody {
@@ -59,6 +61,40 @@ interface UpsterFCMToken {
   fcmToken: string
 }
 
+interface UpdateUserDetailsBody {
+  id: string
+  firstName?: string
+  lastName?: string
+  phoneNumber?: string
+  avatarUri?: string
+  profileImageURL?: string
+  bannerImageURL?: string
+}
+
+interface ValidateExistingUserBody {
+  email?: string
+  username?: string
+  phoneNumber?: string
+}
+
+interface ForgetEmailBody {
+  phoneNumber: string
+}
+
+interface ForgetUsernameBody {
+  email: string
+}
+
+interface ForgetPasswordBody {
+  email: string
+}
+
+interface ResetPasswordBody {
+  email: string
+  otp: string
+  newPassword: string
+}
+
 interface FCMSendMessageParams {
   token: string
   title: string
@@ -73,5 +109,11 @@ export {
   LoginUserBody,
   UpdateUserRoleBody,
   UpsterFCMToken,
+  UpdateUserDetailsBody,
+  ValidateExistingUserBody,
+  ForgetEmailBody,
+  ForgetUsernameBody,
+  ForgetPasswordBody,
+  ResetPasswordBody,
   FCMSendMessageParams,
 }
