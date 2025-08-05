@@ -400,19 +400,98 @@ const handleSlotApproval = async (slotDetails: any) => {
   }
 
   if (!slotDetails.isApproved) {
+    // If not approved, make the slot available again and remove the booking
     baseUpdate.isAvailable = true
     baseUpdate.bookedUserId = null
   } else {
-    baseUpdate.isAvailable = slotDetails.isAvailable
-    baseUpdate.isApproved = slotDetails.isApproved
+    // If approved, keep the slot unavailable (since it's booked)
+    baseUpdate.isAvailable = false
   }
 
-  console.log(slotDetails)
+  console.log('handleSlotApproval - slotDetails:', slotDetails)
+  console.log('handleSlotApproval - baseUpdate:', baseUpdate)
 
   return prisma.schedule.update({
-    where: { id: slotDetails.id },
+    where: { id: slotDetails.scheduleId },
     data: baseUpdate,
   })
+}
+
+const getServiceProviderEvents = async (
+  userId: string,
+  isApproved: boolean | undefined,
+  isUpcoming: boolean,
+  date: Date,
+) => {
+  const now = new Date()
+  now.setDate(now.getDate() - 1)
+  now.setUTCHours(0, 0, 0, 0)
+
+  const dateCondition = isUpcoming
+    ? { gt: now } // Upcoming: date is after now
+    : { lte: now } // Past: date is now or before
+
+  console.log('getServiceProviderEvents - Service provider events:', {
+    serviceProviderId: userId,
+    isApproved: isApproved,
+    date: dateCondition,
+  })
+
+  // Build the where condition
+  const whereCondition: any = {
+    services: {
+      userId: userId, // Services owned by this service provider
+      deletedAt: null,
+      isDisabled: false,
+    },
+    bookedUserId: {
+      not: null, // Only events that have been booked by someone
+    },
+    date: dateCondition,
+  }
+
+  // Only add isApproved filter if it's defined
+  if (isApproved !== undefined) {
+    whereCondition.isApproved = isApproved;
+  }
+
+  // Fetch all schedules for services owned by this service provider
+  const serviceProviderSchedules = await prisma.schedule.findMany({
+    where: whereCondition,
+    include: {
+      bookedUser: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      services: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              username: true,
+              phoneNumber: true,
+              isServiceProvider: true,
+              avatarUri: true,
+            },
+          },
+          servicePreview: true,
+        },
+      },
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  console.log('getServiceProviderEvents - Found schedules:', serviceProviderSchedules.length);
+  return serviceProviderSchedules
 }
 
 const getMyBookedService = async ({
@@ -422,11 +501,79 @@ const getMyBookedService = async ({
   id: string
   type: string
 }) => {
-  const isUpcoming = type === 'upcoming'
-  const isApproved = type === 'approved'
+  console.log('getMyBookedService - Received type:', type, 'for user:', id);
+  
+  if (type === 'Booked') {
+    // For 'Booked' type, get events that need approval
+    console.log('Getting events for approval...');
+    return await getEventsForApproval(id)
+  }
+  
+  // Convert to lowercase for comparison
+  const typeLower = type.toLowerCase();
+  const isUpcoming = typeLower === 'upcoming'
+  const isApproved = typeLower === 'approved'
 
-  const response = await getAllScheduledEvents(id, isApproved, isUpcoming, new Date())
+  console.log('getMyBookedService - isUpcoming:', isUpcoming, 'isApproved:', isApproved);
+
+  // For service providers, get events for their services
+  // For upcoming/past events, show all events (both approved and pending)
+  // For approved events, show only approved events
+  const shouldShowAllEvents = isUpcoming || typeLower === 'past';
+  const finalIsApproved = shouldShowAllEvents ? undefined : isApproved;
+
+  const response = await getServiceProviderEvents(id, finalIsApproved, isUpcoming, new Date())
+  console.log('getMyBookedService - Response count:', response.length);
   return response
+}
+
+const getEventsForApproval = async (userId: string) => {
+  // Get all events that need approval (events booked by other users for this service provider's services)
+  const eventsForApproval = await prisma.schedule.findMany({
+    where: {
+      services: {
+        userId: userId, // Services owned by this user
+        deletedAt: null,
+        isDisabled: false,
+      },
+      bookedUserId: {
+        not: null, // Has been booked by someone
+      },
+      isApproved: false, // Not yet approved
+    },
+    include: {
+      bookedUser: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+      services: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              username: true,
+              phoneNumber: true,
+              isServiceProvider: true,
+              avatarUri: true,
+            },
+          },
+          servicePreview: true,
+        },
+      },
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  return eventsForApproval
 }
 
 const getUserScheduleDates = async (userId: string) => {
@@ -543,8 +690,10 @@ export default {
   holdSchedule,
   handleSlotApproval,
   getMyBookedService,
+  getEventsForApproval,
   getUserScheduleDates,
   getUserScheduleDatesExcludingService,
   getServiceBookedSlots,
   getServiceScheduleDates,
+  getServiceProviderEvents,
 }

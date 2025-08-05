@@ -114,16 +114,20 @@ export const getUpcomingEvents = asyncHandler(
       throw new ApiError(400, 'User ID is required')
     }
 
+    console.log('getUpcomingEvents controller - userId:', userId, 'type:', type);
+
     const response = await service.getAllScheduledEvents(
       userId,
-      type === 'upcoming',
-      type === 'past',
+      true, // isApproved - for upcoming events, we want approved events
+      type === 'upcoming', // isUpcoming - true for upcoming, false for past
       new Date(),
     )
     
     if (!response) {
       throw new ApiError(500, ERROR_MESSAGE.errorInService)
     }
+
+    console.log('getUpcomingEvents controller - Response count:', response.length);
 
     return res
       .status(200)
