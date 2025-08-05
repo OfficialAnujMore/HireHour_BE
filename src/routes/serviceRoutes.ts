@@ -10,6 +10,9 @@ import {
   holdSchedule,
   upsertService,
   getUserScheduleDates,
+  getUserScheduleDatesExcludingService,
+  getServiceBookedSlots,
+  getServiceScheduleDates,
 } from '../controllers/serviceController'
 import {
   UPSERT_SERVICE,
@@ -22,6 +25,9 @@ import {
   APPROVE_SLOTS,
   GET_BOOKED_SERVICES,
   GET_USER_SCHEDULE_DATES,
+  GET_SERVICE_BOOKED_SLOTS,
+  GET_USER_SCHEDULE_DATES_EXCLUDING_SERVICE,
+  GET_SERVICE_SCHEDULE_DATES,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
 import { authorization } from '../middlewares/authorization'
@@ -61,6 +67,27 @@ authorizedServiceRouter.get(
   authentication,
   authorization,
   getUserScheduleDates,
+)
+
+authorizedServiceRouter.get(
+  GET_USER_SCHEDULE_DATES_EXCLUDING_SERVICE,
+  authentication,
+  authorization,
+  getUserScheduleDatesExcludingService,
+)
+
+authorizedServiceRouter.get(
+  GET_SERVICE_BOOKED_SLOTS,
+  authentication,
+  authorization,
+  getServiceBookedSlots,
+)
+
+authorizedServiceRouter.get(
+  GET_SERVICE_SCHEDULE_DATES,
+  authentication,
+  authorization,
+  getServiceScheduleDates,
 )
 
 

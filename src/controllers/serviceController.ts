@@ -244,6 +244,66 @@ export const getUserScheduleDates = asyncHandler(
   },
 )
 
+export const getUserScheduleDatesExcludingService = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { userId, serviceId } = req.query
+    if (!userId || typeof userId !== 'string') {
+      throw new ApiError(400, 'User ID is required')
+    }
+    if (!serviceId || typeof serviceId !== 'string') {
+      throw new ApiError(400, 'Service ID is required')
+    }
+    const response = await service.getUserScheduleDatesExcludingService(userId, serviceId)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInService)
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, response, 'User schedule dates (excluding service) retrieved successfully'),
+      )
+  },
+)
+
+// Controller to get booked slots for a specific service
+export const getServiceBookedSlots = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { serviceId } = req.query
+    
+    if (!serviceId || typeof serviceId !== 'string') {
+      throw new ApiError(400, 'Service ID is required')
+    }
+
+    const response = await service.getServiceBookedSlots(serviceId)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInService)
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, response, 'Service booked slots retrieved successfully'),
+      )
+  },
+)
+
+export const getServiceScheduleDates = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { serviceId } = req.query
+    if (!serviceId || typeof serviceId !== 'string') {
+      throw new ApiError(400, 'Service ID is required')
+    }
+    const response = await service.getServiceScheduleDates(serviceId)
+    if (!response) {
+      throw new ApiError(500, ERROR_MESSAGE.errorInService)
+    }
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, response, 'Service schedule dates retrieved successfully'),
+      )
+  },
+)
+
 // Controller to hold a schedule for
 export const holdSchedule = asyncHandler(
   async (req: Request<{}, {}, HoldSlotRequestBody>, res: Response) => {

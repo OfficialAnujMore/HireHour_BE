@@ -455,6 +455,83 @@ const getUserScheduleDates = async (userId: string) => {
   return uniqueDates
 }
 
+const getUserScheduleDatesExcludingService = async (userId: string, serviceId: string) => {
+  // Get all schedule dates for the user's services EXCEPT the current service being edited
+  const userSchedules = await prisma.schedule.findMany({
+    where: {
+      services: {
+        userId: userId,
+        deletedAt: null,
+        isDisabled: false,
+        id: {
+          not: serviceId, // Exclude the current service
+        },
+      },
+    },
+    select: {
+      date: true,
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  // Extract unique dates and format them
+  const uniqueDates = [...new Set(userSchedules.map(schedule => 
+    schedule.date.toISOString().split('T')[0] // Format as YYYY-MM-DD
+  ))]
+
+  return uniqueDates
+}
+
+const getServiceBookedSlots = async (serviceId: string) => {
+  // Get all booked slots for a specific service
+  const bookedSlots = await prisma.schedule.findMany({
+    where: {
+      servicesId: serviceId,
+      bookedUserId: {
+        not: null, // Only get slots that have been booked
+      },
+      isAvailable: false, // Only get slots that are not available
+    },
+    include: {
+      bookedUser: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+        },
+      },
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  return bookedSlots
+}
+
+const getServiceScheduleDates = async (serviceId: string) => {
+  // Get all schedule dates for a specific service (both available and booked)
+  const serviceSchedules = await prisma.schedule.findMany({
+    where: {
+      servicesId: serviceId,
+    },
+    select: {
+      id: true,
+      date: true,
+      isAvailable: true,
+      bookedUserId: true,
+    },
+    orderBy: {
+      date: 'asc',
+    },
+  })
+
+  return serviceSchedules
+}
+
 export default {
   getMyService,
   getServicesByCategory,
@@ -467,4 +544,7 @@ export default {
   handleSlotApproval,
   getMyBookedService,
   getUserScheduleDates,
+  getUserScheduleDatesExcludingService,
+  getServiceBookedSlots,
+  getServiceScheduleDates,
 }

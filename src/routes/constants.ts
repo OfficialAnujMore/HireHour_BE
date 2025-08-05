@@ -39,7 +39,11 @@ export const BOOK_SERVICE = '/bookService'
 export const HOLD_SLOTS = '/holdSlots'
 export const APPROVE_SLOTS = '/approveSlots'
 export const GET_BOOKED_SERVICES = '/getBookedService'
+export const HANDLE_SLOT_APPROVAL = '/approveSlots'
 export const GET_USER_SCHEDULE_DATES = '/getUserScheduleDates'
+export const GET_USER_SCHEDULE_DATES_EXCLUDING_SERVICE = '/getUserScheduleDatesExcludingService'
+export const GET_SERVICE_BOOKED_SLOTS = '/getServiceBookedSlots'
+export const GET_SERVICE_SCHEDULE_DATES = '/getServiceScheduleDates'
 
 
 export const UPCOMING_EVENTS = '/upcomingEvents'
