@@ -4,6 +4,7 @@ export const CREATE_PREVIEW = {
   lastName: true,
   email: true,
   username: true,
+  countryCode: true,
   phoneNumber: true,
   isServiceProvider: true,
   avatarUri: true,
@@ -21,6 +22,9 @@ export const UPDATE_PREVIEW = {
   firstName: true,
   lastName: true,
   email: true,
+  username: true,
+  countryCode: true,
+  phoneNumber: true,
   updatedAt: true,
   isServiceProvider: true,
   fcmToken:true

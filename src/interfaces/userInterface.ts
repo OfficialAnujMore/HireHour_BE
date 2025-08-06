@@ -6,6 +6,7 @@ interface User {
   lastName: string
   email: string
   username: string
+  countryCode: string
   phoneNumber: string
   password: string
   isServiceProvider: boolean
@@ -29,6 +30,7 @@ interface RegisterUserBody {
   lastName: string
   email: string
   username: string
+  countryCode: string
   phoneNumber: string
   password: string
   token: string
@@ -65,6 +67,7 @@ interface UpdateUserDetailsBody {
   id: string
   firstName?: string
   lastName?: string
+  countryCode?: string
   phoneNumber?: string
   avatarUri?: string
   profileImageURL?: string

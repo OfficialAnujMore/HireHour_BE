@@ -406,3 +406,24 @@ export const getMyBookedService = asyncHandler(
       )
   },
 )
+
+// Controller to get service details by ID
+export const getServiceDetailsById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { serviceId } = req.params;
+
+    if (!serviceId || typeof serviceId !== 'string') {
+      throw new ApiError(400, 'Service ID is required');
+    }
+
+    const serviceDetails = await service.getServiceDetailsById(serviceId);
+    
+    if (!serviceDetails) {
+      throw new ApiError(404, ERROR_MESSAGE.serviceNotFound);
+    }
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, serviceDetails, SUCCESS_MESSAGE.serviceRetreive));
+  },
+);

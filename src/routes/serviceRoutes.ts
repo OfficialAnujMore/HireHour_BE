@@ -13,6 +13,7 @@ import {
   getUserScheduleDatesExcludingService,
   getServiceBookedSlots,
   getServiceScheduleDates,
+  getServiceDetailsById,
 } from '../controllers/serviceController'
 import {
   UPSERT_SERVICE,
@@ -28,6 +29,7 @@ import {
   GET_SERVICE_BOOKED_SLOTS,
   GET_USER_SCHEDULE_DATES_EXCLUDING_SERVICE,
   GET_SERVICE_SCHEDULE_DATES,
+  GET_SERVICE_DETAILS_BY_ID,
 } from './constants'
 import { authentication } from '../middlewares/authentication'
 import { authorization } from '../middlewares/authorization'
@@ -99,6 +101,7 @@ authorizedServiceRouter.delete(
 )
 
 serviceRouter.get(GET_SERVICE_PROVIDERS, authentication, getServicesByCategory)
+serviceRouter.get(GET_SERVICE_DETAILS_BY_ID, authentication, getServiceDetailsById)
 serviceRouter.post(BOOK_SERVICE, authentication, bookService)
 serviceRouter.post(HOLD_SLOTS, authentication, holdSchedule)
 serviceRouter.post(UPCOMING_EVENTS, authentication, getUpcomingEvents)

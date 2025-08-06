@@ -362,13 +362,75 @@ const deleteService = async (
   })
 }
 
-const getServiceById = async (id: string) => {
-  return await prisma.services.findFirst({
+const getServiceDetailsById = async (serviceId: string) => {
+  const service = await prisma.services.findFirst({
     where: {
-      AND: [{ id: id }],
+      id: serviceId,
+      deletedAt: null,
+      isDisabled: false,
     },
-  })
-}
+    include: {
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          username: true,
+          phoneNumber: true,
+          isServiceProvider: true,
+          avatarUri: true,
+        },
+      },
+      servicePreview: true,
+      schedule: {
+        where: {
+          isAvailable: true,
+          holdExpiresAt: null,
+        },
+        orderBy: {
+          date: 'asc',
+        },
+      },
+    },
+  });
+
+  if (!service) {
+    return null;
+  }
+
+  // Shape the result to match the desired structure
+  return {
+    userId: service.user.id,
+    name: `${service.user.firstName} ${service.user.lastName}`,
+    email: service.user.email,
+    username: service.user.username,
+    phoneNumber: service.user.phoneNumber,
+    isServiceProvider: service.user.isServiceProvider,
+    avatarUri: service.user.avatarUri || '',
+    serviceId: service.id,
+    title: service.title,
+    description: service.description,
+    pricing: service.pricing,
+    ratings: service.ratings,
+    category: service.category,
+    deletedAt: service.deletedAt,
+    isDisabled: service.isDisabled,
+    createdAt: service.createdAt,
+    updatedAt: service.updatedAt,
+    servicePreview: service.servicePreview.map((preview) => ({
+      id: preview.id,
+      uri: preview.uri,
+      servicesId: preview.servicesId,
+    })),
+    schedule: service.schedule.map((sched) => ({
+      id: sched.id,
+      date: sched.date,
+      selected: sched.isAvailable,
+      servicesId: sched.servicesId,
+    })),
+  };
+};
 
 const holdSchedule = async (
   schedule: {
@@ -686,7 +748,7 @@ export default {
   getAllScheduledEvents,
   upsertService,
   deleteService,
-  getServiceById,
+  getServiceDetailsById,
   holdSchedule,
   handleSlotApproval,
   getMyBookedService,

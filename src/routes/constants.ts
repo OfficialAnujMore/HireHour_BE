@@ -44,6 +44,7 @@ export const GET_USER_SCHEDULE_DATES = '/getUserScheduleDates'
 export const GET_USER_SCHEDULE_DATES_EXCLUDING_SERVICE = '/getUserScheduleDatesExcludingService'
 export const GET_SERVICE_BOOKED_SLOTS = '/getServiceBookedSlots'
 export const GET_SERVICE_SCHEDULE_DATES = '/getServiceScheduleDates'
+export const GET_SERVICE_DETAILS_BY_ID = '/getServiceDetailsById/:serviceId'
 
 
 export const UPCOMING_EVENTS = '/upcomingEvents'
